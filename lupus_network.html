@@ -162,9 +162,6 @@
                   property : '',
                   value : []
               };
-
-              
-
               
 
               // This method is responsible for drawing the graph, returns the drawn network
@@ -210,14 +207,14 @@
         "hideNodesOnDrag": false
     },
     "physics": {
-        "enabled": true,
+        "enabled": false,
         "forceAtlas2Based": {
-            "avoidOverlap": 0,
+            "avoidOverlap": 1,
             "centralGravity": 0.01,
             "damping": 0.4,
             "gravitationalConstant": -50,
             "springConstant": 0.08,
-            "springLength": 100
+            "springLength": 255
         },
         "solver": "forceAtlas2Based",
         "stabilization": {
