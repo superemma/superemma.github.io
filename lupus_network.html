@@ -207,24 +207,26 @@ function highlightFilter(filter) {
 <style type=text/css>
 
 /* Styles */
-
-p {
-    color: darkgray;
+.desc { background-color: lightgrey;
+    //color: darkgray;
     font-weight: 100;
-    font-size: 18px;
+    font-size: 16px;
     font-family: Arial, Helvetica, sans-serif;
-    padding-left:225px
-}
+    padding-left:225px } 
 
 </style>
-<center><h1>Lupus co-occurence network</h1></center>
+<center><h1>Lupus Co-occurence Network</h1></center>
+<div class='desc'>
 <p >Welcome to this interactive network,you can start your exploration by adjusting the settings in the bottom. Here are some basics: </p>
-<p>1. To make the labels bigger, increse the font size and the stroke width.</p>
-<p>2. You may also adjust the spring value and other network physics.</p>
-<p>3. To stop the network from tremoring, uncheck the "enabled" in the physics settings. After that you can drag the nodes anywhere in the static figure. </p>
-<p>4. You can also select only the nodes/edges of interest by using the drop down menu below. </p>
+<p>1. To make the labels bigger, increse the font size and the stroke width in the nodes section.</p>
+<p>2. You may also adjust the spring value and other network physics in the physics section.</p>
+<p>3. To stop the network from tremoring, uncheck the "enabled" in the physics settings. </p>
+<p>After that you can drag the nodes anywhere in the static figure. </p>
+<p>4. You can also filter the nodes/edges of interest by using the drop down menu below. </p>
+<p>   Please start from "Select a network item", then "Select a property", Finally, "select value(s)"</p>
 <p>5. If you feel you messed up, don't panic! Just refresh the webpage and everything will reload. </p>
 <p>Have fun!</p>
+</div>
 
 <!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
 <script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
