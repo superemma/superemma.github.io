@@ -1,0 +1,765 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+                 <style type=text/css>
+        /* Styles */
+        .desc { background-color: lightgrey;
+            //color: darkgray;
+            font-weight: 100;
+            font-size: 16px;
+            font-family: Arial, Helvetica, sans-serif;
+            padding-left:225px } 
+
+        </style>
+        <center><h1>PWS 3yo and Older Co-occurence Network</h1></center>
+        <div class='desc'>
+        <p>Welcome to this interactive network,you can start your exploration by adjusting the settings in the bottom. Here are some basics: </p>
+        <p>1. Use the mouse scroll to zoom in and out.</p>
+        <p>2. To make the labels bigger, increse the font size and the stroke width in the nodes section.</p>
+        <p>3. You may also adjust the spring value and other network physics in the physics section.</p>
+        <p>4. To stop the network from tremoring, uncheck the "enabled" in the physics settings. </p>
+        <p>After that you can drag the nodes anywhere in the static figure. </p>
+        <p>5. To highlight a node and its first-degree connections, go to the top dropdown menu to "Select a node by ID"</p>
+        <p>6. You can also filter the nodes/edges of interest by using the other dropdown menus. </p>
+        <p>   Please start from "Select a network item", then "Select a property", Finally, "select value(s)"</p>
+        <p>7. If you feel you messed up, don't panic! Just refresh the webpage and everything will reload. </p>
+        <p> Happy networking!!!</p>
+        </div>
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 1200px;
+                 background-color: white;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+             #config {
+                 float: left;
+                 width: 400px;
+                 height: 600px;
+             }
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="pitolisant">pitolisant</option>
+                                
+                                    <option value="sleepiness">sleepiness</option>
+                                
+                                    <option value="behavior">behavior</option>
+                                
+                                    <option value="hunger">hunger</option>
+                                
+                                    <option value="ed">ed</option>
+                                
+                                    <option value="narcolepsy">narcolepsy</option>
+                                
+                                    <option value="sleep disorder">sleep disorder</option>
+                                
+                                    <option value="cataplexy">cataplexy</option>
+                                
+                                    <option value="growth hormone">growth hormone</option>
+                                
+                                    <option value="norditropin">norditropin</option>
+                                
+                                    <option value="genotropin">genotropin</option>
+                                
+                                    <option value="anxiety">anxiety</option>
+                                
+                                    <option value="hyperphagia">hyperphagia</option>
+                                
+                                    <option value="growth spurt">growth spurt</option>
+                                
+                                    <option value="adhd">adhd</option>
+                                
+                                    <option value="autism">autism</option>
+                                
+                                    <option value="meltdown">meltdown</option>
+                                
+                                    <option value="diabetes">diabetes</option>
+                                
+                                    <option value="low tone">low tone</option>
+                                
+                                    <option value="scoliosis">scoliosis</option>
+                                
+                                    <option value="pain">pain</option>
+                                
+                                    <option value="stress">stress</option>
+                                
+                                    <option value="temper">temper</option>
+                                
+                                    <option value="apraxia">apraxia</option>
+                                
+                                    <option value="cough">cough</option>
+                                
+                                    <option value="pneumonia">pneumonia</option>
+                                
+                                    <option value="omnitrope">omnitrope</option>
+                                
+                                    <option value="stuttering">stuttering</option>
+                                
+                                    <option value="aggression">aggression</option>
+                                
+                                    <option value="miralax">miralax</option>
+                                
+                                    <option value="allergy">allergy</option>
+                                
+                                    <option value="sleep apnea">sleep apnea</option>
+                                
+                                    <option value="snore">snore</option>
+                                
+                                    <option value="acetominophen">acetominophen</option>
+                                
+                                    <option value="ibuprofen">ibuprofen</option>
+                                
+                                    <option value="iron">iron</option>
+                                
+                                    <option value="multivitamin">multivitamin</option>
+                                
+                                    <option value="side effect">side effect</option>
+                                
+                                    <option value="vitamin d">vitamin d</option>
+                                
+                                    <option value="heart problem">heart problem</option>
+                                
+                                    <option value="behavioral problem">behavioral problem</option>
+                                
+                                    <option value="hive">hive</option>
+                                
+                                    <option value="rash">rash</option>
+                                
+                                    <option value="modafinil">modafinil</option>
+                                
+                                    <option value="d">d</option>
+                                
+                                    <option value="probiotic">probiotic</option>
+                                
+                                    <option value="strep">strep</option>
+                                
+                                    <option value="chronic lung disease">chronic lung disease</option>
+                                
+                                    <option value="respiratory infection">respiratory infection</option>
+                                
+                                    <option value="laxative">laxative</option>
+                                
+                                    <option value="stimulant">stimulant</option>
+                                
+                                    <option value="stool softener">stool softener</option>
+                                
+                                    <option value="cerebral palsy">cerebral palsy</option>
+                                
+                                    <option value="wet cough">wet cough</option>
+                                
+                                    <option value="carnitine">carnitine</option>
+                                
+                                    <option value="slurred speech">slurred speech</option>
+                                
+                                    <option value="brain injury">brain injury</option>
+                                
+                                    <option value="developmental disability">developmental disability</option>
+                                
+                                    <option value="melatonin">melatonin</option>
+                                
+                                    <option value="sleep problem">sleep problem</option>
+                                
+                                    <option value="hypothermia">hypothermia</option>
+                                
+                                    <option value="methylphenidate">methylphenidate</option>
+                                
+                                    <option value="benadryl">benadryl</option>
+                                
+                                    <option value="metabolic problem">metabolic problem</option>
+                                
+                                    <option value="constipation">constipation</option>
+                                
+                                    <option value="ssri">ssri</option>
+                                
+                                    <option value="anxiety medicine">anxiety medicine</option>
+                                
+                                    <option value="steroid">steroid</option>
+                                
+                                    <option value="adrenal insufficiency">adrenal insufficiency</option>
+                                
+                                    <option value="albuterol">albuterol</option>
+                                
+                                    <option value="ptsd">ptsd</option>
+                                
+                                    <option value="respiratory virus">respiratory virus</option>
+                                
+                                    <option value="nasonex">nasonex</option>
+                                
+                                    <option value="vitamin c">vitamin c</option>
+                                
+                                    <option value="stomach pain">stomach pain</option>
+                                
+                                    <option value="vomit">vomit</option>
+                                
+                                    <option value="acne">acne</option>
+                                
+                                    <option value="snoring">snoring</option>
+                                
+                                    <option value="developmental delay">developmental delay</option>
+                                
+                                    <option value="swallowing problem">swallowing problem</option>
+                                
+                                    <option value="choking">choking</option>
+                                
+                                    <option value="seizure">seizure</option>
+                                
+                                    <option value="vitamin">vitamin</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+            <div id="config"></div>
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#4A1183", "font": {"color": "black"}, "id": "pitolisant", "label": "pitolisant", "shape": "dot", "size": 14.696938456699067}, {"color": "#B25844", "font": {"color": "black"}, "id": "sleepiness", "label": "sleepiness", "shape": "dot", "size": 10.816653826391967}, {"color": "#B25844", "font": {"color": "black"}, "id": "behavior", "label": "behavior", "shape": "dot", "size": 22.64950330581225}, {"color": "#B25844", "font": {"color": "black"}, "id": "hunger", "label": "hunger", "shape": "dot", "size": 10.392304845413264}, {"color": "#B25844", "font": {"color": "black"}, "id": "ed", "label": "ed", "shape": "dot", "size": 9.486832980505138}, {"color": "#B25844", "font": {"color": "black"}, "id": "narcolepsy", "label": "narcolepsy", "shape": "dot", "size": 14.696938456699067}, {"color": "#B25844", "font": {"color": "black"}, "id": "sleep disorder", "label": "sleep disorder", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "cataplexy", "label": "cataplexy", "shape": "dot", "size": 11.224972160321824}, {"color": "#4A1183", "font": {"color": "black"}, "id": "growth hormone", "label": "growth hormone", "shape": "dot", "size": 19.44222209522358}, {"color": "#4A1183", "font": {"color": "black"}, "id": "norditropin", "label": "norditropin", "shape": "dot", "size": 12.36931687685298}, {"color": "#4A1183", "font": {"color": "black"}, "id": "genotropin", "label": "genotropin", "shape": "dot", "size": 9.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "anxiety", "label": "anxiety", "shape": "dot", "size": 16.703293088490064}, {"color": "#B25844", "font": {"color": "black"}, "id": "hyperphagia", "label": "hyperphagia", "shape": "dot", "size": 13.076696830622023}, {"color": "#B25844", "font": {"color": "black"}, "id": "growth spurt", "label": "growth spurt", "shape": "dot", "size": 9.486832980505138}, {"color": "#B25844", "font": {"color": "black"}, "id": "adhd", "label": "adhd", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "autism", "label": "autism", "shape": "dot", "size": 10.816653826391967}, {"color": "#B25844", "font": {"color": "black"}, "id": "meltdown", "label": "meltdown", "shape": "dot", "size": 10.392304845413264}, {"color": "#B25844", "font": {"color": "black"}, "id": "diabetes", "label": "diabetes", "shape": "dot", "size": 7.348469228349534}, {"color": "#B25844", "font": {"color": "black"}, "id": "low tone", "label": "low tone", "shape": "dot", "size": 13.076696830622023}, {"color": "#B25844", "font": {"color": "black"}, "id": "scoliosis", "label": "scoliosis", "shape": "dot", "size": 9.486832980505138}, {"color": "#B25844", "font": {"color": "black"}, "id": "pain", "label": "pain", "shape": "dot", "size": 10.816653826391967}, {"color": "#B25844", "font": {"color": "black"}, "id": "stress", "label": "stress", "shape": "dot", "size": 11.618950038622252}, {"color": "#B25844", "font": {"color": "black"}, "id": "temper", "label": "temper", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "apraxia", "label": "apraxia", "shape": "dot", "size": 10.392304845413264}, {"color": "#B25844", "font": {"color": "black"}, "id": "cough", "label": "cough", "shape": "dot", "size": 7.937253933193772}, {"color": "#B25844", "font": {"color": "black"}, "id": "pneumonia", "label": "pneumonia", "shape": "dot", "size": 6.708203932499369}, {"color": "#4A1183", "font": {"color": "black"}, "id": "omnitrope", "label": "omnitrope", "shape": "dot", "size": 7.348469228349534}, {"color": "#B25844", "font": {"color": "black"}, "id": "stuttering", "label": "stuttering", "shape": "dot", "size": 6.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "aggression", "label": "aggression", "shape": "dot", "size": 5.196152422706632}, {"color": "#4A1183", "font": {"color": "black"}, "id": "miralax", "label": "miralax", "shape": "dot", "size": 6.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "allergy", "label": "allergy", "shape": "dot", "size": 9.9498743710662}, {"color": "#B25844", "font": {"color": "black"}, "id": "sleep apnea", "label": "sleep apnea", "shape": "dot", "size": 12.727922061357855}, {"color": "#B25844", "font": {"color": "black"}, "id": "snore", "label": "snore", "shape": "dot", "size": 4.242640687119286}, {"color": "#4A1183", "font": {"color": "black"}, "id": "acetominophen", "label": "acetominophen", "shape": "dot", "size": 5.196152422706632}, {"color": "#4A1183", "font": {"color": "black"}, "id": "ibuprofen", "label": "ibuprofen", "shape": "dot", "size": 6.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "iron", "label": "iron", "shape": "dot", "size": 8.485281374238571}, {"color": "#4A1183", "font": {"color": "black"}, "id": "multivitamin", "label": "multivitamin", "shape": "dot", "size": 6.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "side effect", "label": "side effect", "shape": "dot", "size": 7.348469228349534}, {"color": "#4A1183", "font": {"color": "black"}, "id": "vitamin d", "label": "vitamin d", "shape": "dot", "size": 4.242640687119286}, {"color": "#B25844", "font": {"color": "black"}, "id": "heart problem", "label": "heart problem", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "behavioral problem", "label": "behavioral problem", "shape": "dot", "size": 9.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "hive", "label": "hive", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "rash", "label": "rash", "shape": "dot", "size": 9.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "modafinil", "label": "modafinil", "shape": "dot", "size": 4.242640687119286}, {"color": "#4A1183", "font": {"color": "black"}, "id": "d", "label": "d", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "probiotic", "label": "probiotic", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "strep", "label": "strep", "shape": "dot", "size": 7.348469228349534}, {"color": "#B25844", "font": {"color": "black"}, "id": "chronic lung disease", "label": "chronic lung disease", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "respiratory infection", "label": "respiratory infection", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "laxative", "label": "laxative", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "stimulant", "label": "stimulant", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "stool softener", "label": "stool softener", "shape": "dot", "size": 4.242640687119286}, {"color": "#B25844", "font": {"color": "black"}, "id": "cerebral palsy", "label": "cerebral palsy", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "wet cough", "label": "wet cough", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "carnitine", "label": "carnitine", "shape": "dot", "size": 4.242640687119286}, {"color": "#B25844", "font": {"color": "black"}, "id": "slurred speech", "label": "slurred speech", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "brain injury", "label": "brain injury", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "developmental disability", "label": "developmental disability", "shape": "dot", "size": 6.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "melatonin", "label": "melatonin", "shape": "dot", "size": 7.937253933193772}, {"color": "#B25844", "font": {"color": "black"}, "id": "sleep problem", "label": "sleep problem", "shape": "dot", "size": 13.076696830622023}, {"color": "#B25844", "font": {"color": "black"}, "id": "hypothermia", "label": "hypothermia", "shape": "dot", "size": 4.242640687119286}, {"color": "#4A1183", "font": {"color": "black"}, "id": "methylphenidate", "label": "methylphenidate", "shape": "dot", "size": 4.242640687119286}, {"color": "#4A1183", "font": {"color": "black"}, "id": "benadryl", "label": "benadryl", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "metabolic problem", "label": "metabolic problem", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "constipation", "label": "constipation", "shape": "dot", "size": 6.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "ssri", "label": "ssri", "shape": "dot", "size": 6.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "anxiety medicine", "label": "anxiety medicine", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "steroid", "label": "steroid", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "adrenal insufficiency", "label": "adrenal insufficiency", "shape": "dot", "size": 6.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "albuterol", "label": "albuterol", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "ptsd", "label": "ptsd", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "respiratory virus", "label": "respiratory virus", "shape": "dot", "size": 4.242640687119286}, {"color": "#4A1183", "font": {"color": "black"}, "id": "nasonex", "label": "nasonex", "shape": "dot", "size": 3.0}, {"color": "#4A1183", "font": {"color": "black"}, "id": "vitamin c", "label": "vitamin c", "shape": "dot", "size": 4.242640687119286}, {"color": "#B25844", "font": {"color": "black"}, "id": "stomach pain", "label": "stomach pain", "shape": "dot", "size": 7.348469228349534}, {"color": "#B25844", "font": {"color": "black"}, "id": "vomit", "label": "vomit", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "acne", "label": "acne", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "snoring", "label": "snoring", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "developmental delay", "label": "developmental delay", "shape": "dot", "size": 7.348469228349534}, {"color": "#B25844", "font": {"color": "black"}, "id": "swallowing problem", "label": "swallowing problem", "shape": "dot", "size": 3.0}, {"color": "#B25844", "font": {"color": "black"}, "id": "choking", "label": "choking", "shape": "dot", "size": 5.196152422706632}, {"color": "#B25844", "font": {"color": "black"}, "id": "seizure", "label": "seizure", "shape": "dot", "size": 7.937253933193772}, {"color": "#4A1183", "font": {"color": "black"}, "id": "vitamin", "label": "vitamin", "shape": "dot", "size": 7.937253933193772}]);
+                  edges = new vis.DataSet([{"from": "pitolisant", "to": "sleepiness", "width": 20.784609690826528}, {"from": "behavior", "to": "pitolisant", "width": 18.734993995195197}, {"from": "hunger", "to": "pitolisant", "width": 16.431676725154983}, {"from": "ed", "to": "pitolisant", "width": 16.431676725154983}, {"from": "behavior", "to": "sleepiness", "width": 15.297058540778353}, {"from": "narcolepsy", "to": "sleep disorder", "width": 12.727922061357855}, {"from": "pitolisant", "to": "sleep disorder", "width": 12.727922061357855}, {"from": "hunger", "to": "sleepiness", "width": 11.618950038622252}, {"from": "narcolepsy", "to": "pitolisant", "width": 11.618950038622252}, {"from": "ed", "to": "sleepiness", "width": 11.618950038622252}, {"from": "cataplexy", "to": "narcolepsy", "width": 10.816653826391967}, {"from": "behavior", "to": "hunger", "width": 10.816653826391967}, {"from": "behavior", "to": "ed", "width": 10.392304845413264}, {"from": "behavior", "to": "growth hormone", "width": 9.486832980505138}, {"from": "ed", "to": "hunger", "width": 9.0}, {"from": "growth hormone", "to": "norditropin", "width": 8.485281374238571}, {"from": "genotropin", "to": "norditropin", "width": 7.937253933193772}, {"from": "anxiety", "to": "hunger", "width": 7.348469228349534}, {"from": "growth hormone", "to": "sleepiness", "width": 7.348469228349534}, {"from": "behavior", "to": "hyperphagia", "width": 6.708203932499369}, {"from": "growth hormone", "to": "growth spurt", "width": 6.708203932499369}, {"from": "adhd", "to": "autism", "width": 6.708203932499369}, {"from": "anxiety", "to": "meltdown", "width": 6.708203932499369}, {"from": "behavior", "to": "diabetes", "width": 6.0}, {"from": "low tone", "to": "scoliosis", "width": 6.0}, {"from": "pain", "to": "stress", "width": 6.0}, {"from": "anxiety", "to": "stress", "width": 6.0}, {"from": "behavior", "to": "temper", "width": 6.0}, {"from": "apraxia", "to": "autism", "width": 5.196152422706632}, {"from": "cough", "to": "pneumonia", "width": 5.196152422706632}, {"from": "norditropin", "to": "omnitrope", "width": 5.196152422706632}, {"from": "apraxia", "to": "stuttering", "width": 5.196152422706632}, {"from": "aggression", "to": "miralax", "width": 5.196152422706632}, {"from": "genotropin", "to": "growth hormone", "width": 5.196152422706632}, {"from": "allergy", "to": "hyperphagia", "width": 5.196152422706632}, {"from": "sleep apnea", "to": "snore", "width": 5.196152422706632}, {"from": "acetominophen", "to": "ibuprofen", "width": 5.196152422706632}, {"from": "cataplexy", "to": "pitolisant", "width": 5.196152422706632}, {"from": "iron", "to": "multivitamin", "width": 5.196152422706632}, {"from": "growth hormone", "to": "side effect", "width": 5.196152422706632}, {"from": "multivitamin", "to": "vitamin d", "width": 4.242640687119286}, {"from": "behavior", "to": "heart problem", "width": 4.242640687119286}, {"from": "behavior", "to": "behavioral problem", "width": 4.242640687119286}, {"from": "behavior", "to": "growth spurt", "width": 4.242640687119286}, {"from": "hive", "to": "rash", "width": 4.242640687119286}, {"from": "modafinil", "to": "pitolisant", "width": 4.242640687119286}, {"from": "d", "to": "probiotic", "width": 4.242640687119286}, {"from": "iron", "to": "strep", "width": 4.242640687119286}, {"from": "chronic lung disease", "to": "respiratory infection", "width": 4.242640687119286}, {"from": "laxative", "to": "stimulant", "width": 4.242640687119286}, {"from": "laxative", "to": "stool softener", "width": 4.242640687119286}, {"from": "cerebral palsy", "to": "respiratory infection", "width": 4.242640687119286}, {"from": "cough", "to": "wet cough", "width": 4.242640687119286}, {"from": "cataplexy", "to": "stress", "width": 4.242640687119286}, {"from": "cataplexy", "to": "pain", "width": 4.242640687119286}, {"from": "carnitine", "to": "growth hormone", "width": 4.242640687119286}, {"from": "behavior", "to": "slurred speech", "width": 4.242640687119286}, {"from": "brain injury", "to": "developmental disability", "width": 4.242640687119286}, {"from": "melatonin", "to": "sleep problem", "width": 4.242640687119286}, {"from": "hypothermia", "to": "low tone", "width": 4.242640687119286}, {"from": "methylphenidate", "to": "narcolepsy", "width": 4.242640687119286}, {"from": "diabetes", "to": "heart problem", "width": 4.242640687119286}, {"from": "benadryl", "to": "melatonin", "width": 4.242640687119286}, {"from": "miralax", "to": "stool softener", "width": 4.242640687119286}, {"from": "diabetes", "to": "metabolic problem", "width": 4.242640687119286}, {"from": "diabetes", "to": "hyperphagia", "width": 4.242640687119286}, {"from": "constipation", "to": "miralax", "width": 4.242640687119286}, {"from": "anxiety", "to": "hyperphagia", "width": 4.242640687119286}, {"from": "growth hormone", "to": "sleep apnea", "width": 4.242640687119286}, {"from": "side effect", "to": "ssri", "width": 4.242640687119286}, {"from": "side effect", "to": "sleep problem", "width": 4.242640687119286}, {"from": "anxiety medicine", "to": "steroid", "width": 4.242640687119286}, {"from": "adrenal insufficiency", "to": "cataplexy", "width": 4.242640687119286}, {"from": "adhd", "to": "behavioral problem", "width": 4.242640687119286}, {"from": "albuterol", "to": "ibuprofen", "width": 4.242640687119286}, {"from": "ptsd", "to": "strep", "width": 4.242640687119286}, {"from": "ptsd", "to": "respiratory virus", "width": 4.242640687119286}, {"from": "albuterol", "to": "nasonex", "width": 4.242640687119286}, {"from": "probiotic", "to": "vitamin c", "width": 4.242640687119286}, {"from": "stomach pain", "to": "vomit", "width": 4.242640687119286}, {"from": "acne", "to": "iron", "width": 4.242640687119286}, {"from": "anxiety", "to": "respiratory infection", "width": 4.242640687119286}, {"from": "sleepiness", "to": "snoring", "width": 4.242640687119286}, {"from": "anxiety", "to": "stomach pain", "width": 4.242640687119286}, {"from": "allergy", "to": "diabetes", "width": 4.242640687119286}, {"from": "allergy", "to": "behavior", "width": 4.242640687119286}, {"from": "pneumonia", "to": "ptsd", "width": 4.242640687119286}, {"from": "autism", "to": "behavior", "width": 4.242640687119286}, {"from": "autism", "to": "behavioral problem", "width": 4.242640687119286}, {"from": "autism", "to": "developmental delay", "width": 4.242640687119286}, {"from": "autism", "to": "scoliosis", "width": 4.242640687119286}, {"from": "autism", "to": "swallowing problem", "width": 4.242640687119286}, {"from": "allergy", "to": "choking", "width": 4.242640687119286}, {"from": "acetominophen", "to": "albuterol", "width": 4.242640687119286}, {"from": "pitolisant", "to": "seizure", "width": 4.242640687119286}, {"from": "sleep problem", "to": "vitamin", "width": 4.242640687119286}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics",
+            "nodes",
+            "edges"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.01,
+            "damping": 0.4,
+            "gravitationalConstant": -50,
+            "springConstant": 0.08,
+            "springLength": 100
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+                  // if this network requires displaying the configure window,
+                  // put it in its div
+                  options.configure["container"] = document.getElementById("config");
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
