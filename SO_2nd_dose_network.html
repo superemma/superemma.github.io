@@ -500,12 +500,19 @@ function highlightFilter(filter) {
         "enabled": true,
         "filter": [
             "physics",
+            "edges",
             "nodes"
         ]
     },
+    "nodes": {
+    "font": {
+      "size": 30,
+      "strokeWidth": 6
+    },
+  },
     "edges": {
         "color": {
-            "inherit": true
+            "inherit": "both"
         },
         "smooth": {
             "enabled": true,
@@ -515,7 +522,9 @@ function highlightFilter(filter) {
     "interaction": {
         "dragNodes": true,
         "hideEdgesOnDrag": false,
-        "hideNodesOnDrag": false
+        "hideNodesOnDrag": false,
+         "navigationButtons": true,
+            "zoomView": false
     },
     "physics": {
         "enabled": true,
