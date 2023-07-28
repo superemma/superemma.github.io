@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="PWS/data.js"></script>
+    <style>
+        #mynetwork {
+            width: 1000px;
+            height: 800px;
+            border: 1px solid lightgray;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex;">
+        <div style="flex: 0 0 auto; padding-right: 10px;">
+            <div id="groupCheckboxes"></div>
+            <div>
+                <input type="checkbox" id="selectAll" onchange="selectAllGroups()" />
+                <label for="selectAll">Select All</label>
+            </div>
+            <div>
+                <input type="checkbox" id="unselectAll" onchange="unselectAllGroups()" />
+                <label for="unselectAll">Unselect All</label>
+            </div>
+            <div>
+            <input type="button" onclick="clusterByColor()" value="Cluster by color" />
+        </div>
+        </div>
+        <div style="flex: 1 1 auto;">
+            <div id="mynetwork" style="width: 100%; height: 800px; border: 1px solid lightgray;"></div>
+        </div>
+    </div>
+<input type="button" onclick="clusterByColor()" value="Cluster by color" />
+
+<script type="text/javascript">
+    var nodesDataset = new vis.DataSet(nodes);
+    var edgesDataset = new vis.DataSet(edges);
+    var data = {
+        nodes: nodesDataset,
+        edges: edgesDataset
+    };
+    var container = document.getElementById('mynetwork');
+    var options = {
+        layout: {
+          hierarchical: {
+            direction: "UD",
+            sortMethod: "directed",
+          },
+        },
+        interaction: { dragNodes: true },
+        physics: {
+          enabled: false,
+        },
+        configure: {
+          filter: function (option, path) {
+            if (path.indexOf("hierarchical") !== -1) {
+              return true;
+            }
+            return false;
+          },
+          showButton: false,
+        },
+      };
+    edgesDataset.forEach(function (edge) {
+        edge.arrows = 'to';
+    });
+    var network = new vis.Network(container, data, options);
+    network.on("selectNode", function (params) {
+        if (params.nodes.length == 1) {
+          if (network.isCluster(params.nodes[0]) == true) {
+            network.openCluster(params.nodes[0]);
+          }
+        }
+      });
+
+
+    var groupList = Array.from(new Set(nodes.map(node => parseInt(node.group)))).sort((a,b) => a-b);
+
+    var groupCheckboxesDiv = document.getElementById("groupCheckboxes");
+
+    groupList.forEach(group => {
+        var checkBox = document.createElement("input");
+        var label = document.createElement("label");
+        var color = nodes.find(node => node.group == group).color;
+        checkBox.type = "checkbox";
+        checkBox.id = `group${group}`;
+        checkBox.checked = true;
+        checkBox.onchange = filterByGroup;
+        label.htmlFor = `group${group}`;
+        label.textContent = `Group ${group}`;
+        label.style.color = color;
+        groupCheckboxesDiv.appendChild(checkBox);
+        groupCheckboxesDiv.appendChild(label);
+        groupCheckboxesDiv.appendChild(document.createElement("br"));
+    });
+
+    function filterByGroup() {
+        nodesDataset = new vis.DataSet(nodes.filter(node => document.getElementById(`group${node.group}`).checked));
+        network.setData({
+            nodes: nodesDataset,
+            edges: edgesDataset
+        });
+    }
+
+    function clusterByColor() {
+        var colorGroups = nodes.reduce((groups, node) => {
+            if (!groups[node.color]) {
+                groups[node.color] = [];
+            }
+            groups[node.color].push(node.id);
+            return groups;
+        }, {});
+
+        for (var color in colorGroups) {
+            var clusterOptionsByData = {
+                joinCondition: function (nodeOptions) {
+                    return colorGroups[color].indexOf(nodeOptions.id) !== -1;
+                },
+                processProperties: function (clusterOptions, childNodes) {
+                    clusterOptions.color = color;
+                    return clusterOptions;
+                },
+                clusterNodeProperties: { id: 'cluster:' + color, label: 'Cluster ' + color }
+            };
+            network.cluster(clusterOptionsByData);
+        }
+    }
+    function selectAllGroups() {
+        const selectAllCheckbox = document.getElementById("selectAll");
+        const unselectAllCheckbox = document.getElementById("unselectAll");
+
+        if (selectAllCheckbox.checked) {
+            groupList.forEach(group => {
+                document.getElementById(`group${group}`).checked = true;
+            });
+            filterByGroup();
+            unselectAllCheckbox.checked = false;
+        }
+    }
+
+    function unselectAllGroups() {
+        const selectAllCheckbox = document.getElementById("selectAll");
+        const unselectAllCheckbox = document.getElementById("unselectAll");
+
+        if (unselectAllCheckbox.checked) {
+            groupList.forEach(group => {
+                document.getElementById(`group${group}`).checked = false;
+            });
+            filterByGroup();
+            selectAllCheckbox.checked = false;
+        }
+    }
+</script>
+
+</body>
+</html>
