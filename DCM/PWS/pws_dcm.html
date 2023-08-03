@@ -9,11 +9,17 @@
             height: 800px;
             border: 1px solid lightgray;
         }
+        #infoBox h4 {
+        font-size: 16px;
+        }
+        #infoBox p {
+            font-size: 14px;
+            line-height: 1; 
+            margin: 5px 0
+        }
     </style>
 </head>
 <body>
-    <h1>Hierarchical Layout of Disease concept Model</h1>
-    Circles are concepts from original text, triangls are concepts that did not appeared in the text, but are parent concepts fecteched from the knowledge base <br /><br />
     <div style="display: flex;">
         <div style="flex: 0 0 auto; padding-right: 10px;">
             <div id="groupCheckboxes"></div>
@@ -28,13 +34,32 @@
             <div>
             <input type="button" onclick="clusterByColor()" value="Cluster by color" />
         </div>
+        <select id="layout-options">
+            <option value="hierarchical">Hierarchical</option>
+            <option value="random">Random</option>
+            <option value="hubsize">Hubsize</option>
+        </select>
         </div>
         <div style="flex: 1 1 auto;">
             <div id="mynetwork" style="width: 100%; height: 800px; border: 1px solid lightgray;"></div>
         </div>
     </div>
-<input type="button" onclick="clusterByColor()" value="Cluster by color" />
+    <div id="infoBox" style="position: absolute; top: 0px; right: 20px; width: 250px; height: 800px; background-color: #ffffff; border: 1px solid #000000; padding: 10px; overflow-y: auto; display: none; z-index: 999;">
+        <h4>Filter Options:</h4>
+        <div>
+            <input type="checkbox" id="filterLKB" onchange="filterLKBConcepts()" />
+            <label for="filterLKB">Filter Concepts not in LKB</label>
 
+            
+        </div>
+        <hr>
+        <h4>All Concepts in Selected Groups:</h4>
+    </div>
+                <select id="layout-options">
+                <option value="hierarchical">Hierarchical</option>
+                <option value="random">Random</option>
+                <option value="hubsize">Hubsize</option>
+            </select>
 <script type="text/javascript">
     var nodesDataset = new vis.DataSet(nodes);
     var edgesDataset = new vis.DataSet(edges);
@@ -68,13 +93,121 @@
         edge.arrows = 'to';
     });
     var network = new vis.Network(container, data, options);
+    var selectedNode = null; // Define selectedNode outside of event handler
+
     network.on("selectNode", function (params) {
-        if (params.nodes.length == 1) {
-          if (network.isCluster(params.nodes[0]) == true) {
-            network.openCluster(params.nodes[0]);
-          }
+        var nodeId = params.nodes[0];
+        const filterLKBCheckbox = document.getElementById("filterLKB");
+
+        if (network.isCluster(nodeId) == true) {
+            network.openCluster(nodeId);
+        } else {
+            selectedNode = nodes.find(node => node.id == nodeId);
+            showFilteredNodes(filterLKBCheckbox.checked);
         }
-      });
+    });
+
+    // Define filterLKBConcepts to refresh the infobox when the checkbox is changed
+    function filterLKBConcepts() {
+        const filterLKBCheckbox = document.getElementById("filterLKB");
+        showFilteredNodes(filterLKBCheckbox.checked);
+    }
+
+    function filterByGroup() {
+        nodesDataset = new vis.DataSet(nodes.filter(node => document.getElementById(`group${node.group}`).checked));
+        network.setData({
+            nodes: nodesDataset,
+            edges: edgesDataset
+        });
+    }
+    document.getElementById('layout-options').addEventListener('change', function() {
+    var selectedOption = this.value;
+
+    // update the layout options
+    if (selectedOption === "hierarchical") {
+        options.layout = {
+            hierarchical: {
+                direction: "UD",
+                sortMethod: "directed",
+            }
+        };
+        options.physics = {enabled: false}; // Keep physics disabled for hierarchical layout
+    } else if (selectedOption === "random") {
+        options.layout = {
+            randomSeed: undefined
+        };
+        options.physics = {enabled: true}; // Enable physics for dynamic layout
+    } else if (selectedOption === "hubsize") {
+        options.layout = {
+            improvedLayout: true
+        };
+        options.physics = {enabled: true}; // Enable physics for dynamic layout
+    }
+
+    // reconstruct the network with new options
+    network.setOptions(options);
+    });
+
+
+    // Add an event listener to hide the info box when body is clicked
+    document.body.addEventListener('click', function(event) {
+    var infobox = document.getElementById('infoBox');
+    var mynetwork = document.getElementById('mynetwork');
+    var targetElement = event.target; // clicked element
+
+    do {
+        if (targetElement == infobox || targetElement == mynetwork) {
+            // This is a click inside the infobox or the network, do nothing
+            return;
+        }
+        // Go up the DOM
+        targetElement = targetElement.parentNode;
+    } while (targetElement);
+
+    // This is a click outside, hide the infobox
+    infobox.style.display = 'none';
+});
+
+
+    function showFilteredNodes(isFilterLKBChecked) {
+        var infoBox = document.getElementById("infoBox");
+        if (!selectedNode) {
+            return; // No node selected, nothing to do
+        }
+        
+        var sameGroupNodes = nodes.filter(node => node.group == selectedNode.group);
+
+        infoBox.innerHTML = `<div id="filterOptions">
+                <input type="checkbox" id="filterLKB" onchange="filterLKBConcepts()" ${isFilterLKBChecked ? 'checked' : ''} />
+                <label for="filterLKB">Filter Concepts not in LKB</label>
+            </div>
+            <hr>
+            <h4>All Concepts in Group ${selectedNode.group}:</h4>`; // Clear previous info
+
+        sameGroupNodes.sort((a, b) => a.level - b.level).forEach(node => {
+            if (isFilterLKBChecked && node.shape === "triangle") {
+                return; // Skip displaying nodes with shape "triangle" when the checkbox is checked
+            }
+
+            var p = document.createElement("p");
+            p.textContent = `${node.id}:${node.label}`;
+            p.onclick = function(e) { 
+                network.focus(node.id, {scale: 1});
+                network.selectNodes([node.id]);
+                e.stopPropagation();
+            };
+            if (node.id === selectedNode.id) {
+                p.style.backgroundColor = "yellow";
+            }
+            infoBox.appendChild(p);
+        });
+        infoBox.style.display = "block";  // Show the info box
+}
+
+
+
+
+
 
 
     var groupList = Array.from(new Set(nodes.map(node => parseInt(node.group)))).sort((a,b) => a-b);
@@ -153,6 +286,7 @@
             selectAllCheckbox.checked = false;
         }
     }
+
 </script>
 
 </body>
