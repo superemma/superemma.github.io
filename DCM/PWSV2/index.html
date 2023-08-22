@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
+    <script src="data.js"></script>
+    <style>
+#mynetwork {
+    width: 1000px;
+    height: 800px;
+    border: 1px solid lightgray;
+}
+
+.loader {
+    /* Your existing styles */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: none;
+}
+
+.loader-circle {
+    /* Your existing styles for the circle */
+    border: 16px solid #f3f3f3;
+    border-top: 16px solid #3498db;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+
+.loader-text {
+    text-align: center;
+    margin-top: 10px;
+    /* Additional styles for the loading text */
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+    </style>
+</head>
+<body>
+    <div style="display: flex;">
+        <div style="flex: 0 0 auto; padding-right: 10px;">
+
+        </div>
+        <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
+            <div id="treemap-container"></div>
+            <div>        <input type="checkbox" id="removeTraversalNodes" > 
+                <label for="removeTraversalNodes">Remove added concepts from LKB</label></div>
+            <div id="mynetwork"></div>
+            <div class="loader" id="loader">
+                <div class="loader-circle"></div>
+                <div class="loader-text">Loading... This might takes a while for large network...</div>
+            </div>
+            
+        </div>
+        
+    </div>
+<script type="text/javascript">
+
+    //treemap 
+    var hierarchical_data = [];
+
+    nodes.forEach(node => {
+        var id =node.id;
+        var preferred_name=node.preferred_name;
+        var value = node.value;
+        var rank= node.rank;
+
+        if (rank >= 0 && rank < 4) {
+            if (rank < 2 || value >= 0.05) {
+                hierarchical_data.push(node);
+            }
+        } else if (value >= 0.1) {
+            hierarchical_data.push(node);
+        }
+    });
+    hierarchical_data.forEach(item => {
+    if (typeof item.original_descendants_names === 'string') {
+    item.original_descendants_names = item.original_descendants_names.split(',');
+    }
+    });
+
+// Process nodes for vis.js
+var processedNodes = nodes.map(node => {
+    return {
+        ...node,
+        title:node.id,
+        level: node.rank,
+        label: node.preferred_name,
+        shape: node.source === "original" ? "dot" : "triangle"
+    };
+});
+
+// Empty dataset for nodes and edges.
+var nodesDataset = new vis.DataSet([]);
+var edgesDataset = new vis.DataSet([]);
+
+var container = document.getElementById('mynetwork');
+var options = {
+    layout: {
+        hierarchical: {
+            direction: "UD",
+            sortMethod: "directed",
+        },
+    },
+    interaction: { dragNodes: true },
+    physics: {
+        enabled: false,
+    },
+    configure: {
+        showButton: false,
+    },
+};
+
+var network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
+
+// Helper function to gather descendants
+function gatherDescendants(nodeId, data) {
+    var descendants = [];
+    for (let item of data) {
+        if (item.id === nodeId) {
+            descendants.push(item.id);
+            if (item.descendants) {
+                descendants = descendants.concat(item.descendants);
+            }
+            break;
+        }
+    }
+    return descendants;
+}
+
+var trace = {
+    type: 'treemap',
+    labels: hierarchical_data.map(item => item.preferred_name),
+    parents: hierarchical_data.map(item => item.parent),
+    values: hierarchical_data.map(item => item.value),
+    ids: hierarchical_data.map(item => item.id),
+    hovertext: hierarchical_data.map(item => {
+        if (typeof item.original_descendants_names === 'string') {
+            return item.original_descendants_names.split(', ').join('<br>');
+        } else {
+            return item.original_descendants_names.join('<br>');
+        }
+    }),
+    hoverinfo: 'label+text+percent entry',
+    textinfo: 'label+text+value',
+    texttemplate: '%{label}<br>%{percentEntry:.2%} of all concepts', 
+};
+
+var layout = {
+    margin: { t: 0, l: 0, r: 0, b: 0 },
+};
+
+Plotly.newPlot('treemap-container', [trace], layout);
+
+let clickedNodeId = null;
+// Treemap click event
+document.getElementById('treemap-container').on('plotly_click', function(data) {
+    //uncheck the box
+    document.getElementById('removeTraversalNodes').checked = false;
+    showLoader();
+    setTimeout(function() {
+    // Clear the existing nodes and edges
+    nodesDataset.clear();
+    edgesDataset.clear();
+
+    clickedNodeId = data.points[0].id;
+    const descendantsList = gatherDescendants(clickedNodeId, hierarchical_data);
+    const relevantEdges = edges.filter(edge => descendantsList.includes(edge.from) && descendantsList.includes(edge.to));
+
+    // Add the clicked node and its descendants to the dataset
+    descendantsList.forEach(function(descendantId) {
+    var node = processedNodes.find(n => n.id === descendantId);
+    if (node && !nodesDataset.get(node.id)) {
+        nodesDataset.add(node);
+
+    }
+});
+
+    //console.log("Clicked Node ID:", clickedNodeId);
+    //console.log("Descendants:", descendantsList);
+
+// Iterate through the filtered edges and add them to the dataset
+    relevantEdges.forEach(edge => {
+        //console.log("Adding edge:", edge);
+        edge.arrows = 'to';
+        edgesDataset.add(edge);
+    });
+
+
+    // Zoom into the clicked node
+    network.focus(clickedNodeId, {
+        scale: 1,
+        animation: {
+            duration: 1000,
+            easingFunction: "easeInOutQuad"
+        }
+    });
+    hideLoader(); 
+}, 10);
+});
+// remove traversal nodes if node id is not clickedNodeId defined in another click event
+let originalNodes, originalEdges,traversalNodeIds;
+
+document.getElementById('removeTraversalNodes').addEventListener('change', function(e) {
+    showLoader();
+    setTimeout(function() {
+        if (e.target.checked) {
+            originalNodes = nodesDataset.get();
+            originalEdges = edgesDataset.get();
+    console.log("Clicked Node ID:", clickedNodeId);
+
+            // Identify nodes with source as 'traversal', excluding the clickedNodeId
+            let traversalNodeIds = nodesDataset.get({
+                filter: function(node) {
+                    return node.source === 'traversal' && node.id !== clickedNodeId;
+                }
+            }).map(node => node.id);
+
+            traversalNodeIds.forEach(nodeId => removeAndReconnect(nodeId));
+        } else {
+            // Restore the original graph
+            nodesDataset.clear();
+            edgesDataset.clear();
+            nodesDataset.add(originalNodes);
+            edgesDataset.add(originalEdges);
+        }
+        hideLoader(); 
+    }, 10);
+});
+
+
+function removeAndReconnect(nodeId) {
+    let predecessors = findPredecessors(nodeId);
+    let successors = findSuccessors(nodeId);
+
+    // Remove the node
+    nodesDataset.remove(nodeId);
+
+    // Reconnect predecessors to successors, only if both predecessor and successor are still in the graph
+    predecessors.forEach(pred => {
+        if (nodesDataset.get(pred)) { // check if predecessor exists
+            successors.forEach(succ => {
+                if (nodesDataset.get(succ) && !edgeExists(pred, succ)) { // check if successor exists and there's no edge between them
+                    edgesDataset.add({
+                        from: pred,
+                        to: succ
+                    });
+                }
+            });
+        }
+    });
+
+    // Remove edges connected to this node
+    edgesDataset.get({
+        filter: function(edge) {
+            return edge.from === nodeId || edge.to === nodeId;
+        }
+    }).forEach(edge => edgesDataset.remove(edge.id));
+}
+
+function findPredecessors(nodeId) {
+    return edgesDataset.get({
+        filter: function(edge) {
+            return edge.to === nodeId;
+        }
+    }).map(edge => edge.from);
+}
+
+function findSuccessors(nodeId) {
+    return edgesDataset.get({
+        filter: function(edge) {
+            return edge.from === nodeId;
+        }
+    }).map(edge => edge.to);
+}
+
+function edgeExists(from, to) {
+    return !!edgesDataset.get({
+        filter: function(edge) {
+            return edge.from === from && edge.to === to;
+        }
+    }).length;
+}
+
+
+
+//loading 
+function showLoader() {
+    document.getElementById("loader").style.display = "block";
+}
+
+function hideLoader() {
+    document.getElementById("loader").style.display = "none";
+}
+
+</script>
+
+</body>
+</html>
