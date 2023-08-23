@@ -66,18 +66,17 @@
 
     //treemap 
     var hierarchical_data = [];
-
     nodes.forEach(node => {
-        var id =node.id;
-        var preferred_name=node.preferred_name;
+        var id = node.id;
+        var preferred_name = node.preferred_name;
         var value = node.value;
-        var rank= node.rank;
+        var rank = node.rank;
 
-        if (rank >= 0 && rank < 4) {
-            if (rank < 2 || value >= 0.05) {
+        if (rank >= 2 && rank < 4) {
+            if (value >= 0.05) {
                 hierarchical_data.push(node);
             }
-        } else if (value >= 0.1) {
+        } else if (rank <= 2 && value >= 0.1) {
             hierarchical_data.push(node);
         }
     });
@@ -151,7 +150,7 @@ var trace = {
     }),
     hoverinfo: 'label+text+percent entry',
     textinfo: 'label+text+value',
-    texttemplate: '%{label}<br>%{percentEntry:.2%} of all concepts', 
+    texttemplate: '%{label}<br>%{percentEntry:.2%} of parent concepts', 
 };
 
 var layout = {
@@ -162,49 +161,56 @@ Plotly.newPlot('treemap-container', [trace], layout);
 
 let clickedNodeId = null;
 // Treemap click event
+let lastClickedNode = null;
 document.getElementById('treemap-container').on('plotly_click', function(data) {
     //uncheck the box
-    document.getElementById('removeTraversalNodes').checked = false;
-    showLoader();
-    setTimeout(function() {
-    // Clear the existing nodes and edges
-    nodesDataset.clear();
-    edgesDataset.clear();
-
     clickedNodeId = data.points[0].id;
-    const descendantsList = gatherDescendants(clickedNodeId, hierarchical_data);
-    const relevantEdges = edges.filter(edge => descendantsList.includes(edge.from) && descendantsList.includes(edge.to));
-
-    // Add the clicked node and its descendants to the dataset
-    descendantsList.forEach(function(descendantId) {
-    var node = processedNodes.find(n => n.id === descendantId);
-    if (node && !nodesDataset.get(node.id)) {
-        nodesDataset.add(node);
-
-    }
-});
-
-    //console.log("Clicked Node ID:", clickedNodeId);
-    //console.log("Descendants:", descendantsList);
-
-// Iterate through the filtered edges and add them to the dataset
-    relevantEdges.forEach(edge => {
-        //console.log("Adding edge:", edge);
-        edge.arrows = 'to';
-        edgesDataset.add(edge);
-    });
+        // Find the clicked node in the 'nodes' dataset
+    const clickedNode = nodes.find(node => node.id === clickedNodeId);
+    if (clickedNodeId !== lastClickedNode && clickedNode.rank > 2) {
+        showLoader();
+        setTimeout(function() {
+        // Clear the existing nodes and edges
+        nodesDataset.clear();
+        edgesDataset.clear();
+        document.getElementById('removeTraversalNodes').checked = false;
 
 
-    // Zoom into the clicked node
-    network.focus(clickedNodeId, {
-        scale: 1,
-        animation: {
-            duration: 1000,
-            easingFunction: "easeInOutQuad"
+        const descendantsList = gatherDescendants(clickedNodeId, hierarchical_data);
+        const relevantEdges = edges.filter(edge => descendantsList.includes(edge.from) && descendantsList.includes(edge.to));
+
+        // Add the clicked node and its descendants to the dataset
+        descendantsList.forEach(function(descendantId) {
+        var node = processedNodes.find(n => n.id === descendantId);
+        if (node && !nodesDataset.get(node.id)) {
+            nodesDataset.add(node);
+
         }
     });
-    hideLoader(); 
-}, 10);
+
+        //console.log("Clicked Node ID:", clickedNodeId);
+        //console.log("Descendants:", descendantsList);
+
+    // Iterate through the filtered edges and add them to the dataset
+        relevantEdges.forEach(edge => {
+            //console.log("Adding edge:", edge);
+            edge.arrows = 'to';
+            edgesDataset.add(edge);
+        });
+
+
+        // Zoom into the clicked node
+        network.focus(clickedNodeId, {
+            scale: 1,
+            animation: {
+                duration: 1000,
+                easingFunction: "easeInOutQuad"
+            }
+        });
+        lastClickedNode = clickedNodeId;
+        hideLoader(); 
+    }, 10);
+}
 });
 // remove traversal nodes if node id is not clickedNodeId defined in another click event
 let originalNodes, originalEdges,traversalNodeIds;
