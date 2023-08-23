@@ -6,8 +6,8 @@
     <script src="data.js"></script>
     <style>
 #mynetwork {
-    width: 1000px;
-    height: 800px;
+    width: 100%;          /* Takes up the full width of its parent. */
+    height: 70vh;         /* Takes up 80% of the viewport's height. */
     border: 1px solid lightgray;
 }
 
@@ -51,9 +51,11 @@
         </div>
         <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
             <div id="treemap-container"></div>
-            <div>        <input type="checkbox" id="removeTraversalNodes" > 
-                <label for="removeTraversalNodes">Remove added concepts from LKB</label></div>
-            <div id="mynetwork"></div>
+                <input type="checkbox" id="removeTraversalNodes" > 
+                <label for="removeTraversalNodes">Remove added concepts from LKB</label>
+                <button id="increaseFont">Increase Font Size</button>
+                <button id="decreaseFont">Decrease Font Size</button>
+                <div id="mynetwork"></div>
             <div class="loader" id="loader">
                 <div class="loader-circle"></div>
                 <div class="loader-text">Loading... This might takes a while for large network...</div>
@@ -102,6 +104,9 @@ var nodesDataset = new vis.DataSet([]);
 var edgesDataset = new vis.DataSet([]);
 
 var container = document.getElementById('mynetwork');
+
+// Assuming you've initialized your network as 'network' and your options as 'options'
+let currentFontSize = 14; // starting font size
 var options = {
     layout: {
         hierarchical: {
@@ -110,13 +115,38 @@ var options = {
         },
     },
     interaction: { dragNodes: true },
-    physics: {
-        enabled: false,
+    physics: false,
+    nodes: {
+        font: {
+            size: currentFontSize,
+            strokeWidth: 5, 
+        },
+         // or your preferred stroke width
     },
-    configure: {
-        showButton: false,
-    },
+    edges: {
+        color: {
+            color: 'grey',
+            highlight: 'grey',
+            hover: 'grey',
+            inherit: 'from',
+            opacity: 1.0
+        }
+    }
 };
+document.getElementById('increaseFont').addEventListener('click', function() {
+    currentFontSize += 2;
+    options.nodes.font.size = currentFontSize;
+    network.setOptions(options);
+});
+
+document.getElementById('decreaseFont').addEventListener('click', function() {
+    currentFontSize -= 2;
+    if (currentFontSize < 8) { // Just ensuring it doesn't get too small to read
+        currentFontSize = 8;
+    }
+    options.nodes.font.size = currentFontSize;
+    network.setOptions(options);
+});
 
 var network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
 
@@ -148,9 +178,9 @@ var trace = {
             return item.original_descendants_names.join('<br>');
         }
     }),
-    hoverinfo: 'label+text+percent entry',
+    hoverinfo: 'label+text',//+percent entry
     textinfo: 'label+text+value',
-    texttemplate: '%{label}<br>%{percentEntry:.2%} of parent concepts', 
+    texttemplate: '%{label}<br>%{value:.1%} of all concepts', 
 };
 
 var layout = {
@@ -168,7 +198,7 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
         // Find the clicked node in the 'nodes' dataset
     const clickedNode = nodes.find(node => node.id === clickedNodeId);
     if (clickedNode.rank <= 2) {
-        alert("Network not available for concept with higher hierarchy");
+        if (clickedNodeId !== lastClickedNode) {alert("Network not available for concept with higher hierarchy");}
     } else if (clickedNodeId !== lastClickedNode) {
         showLoader();
         setTimeout(function() {
@@ -202,17 +232,38 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
 
 
         // Zoom into the clicked node
-        network.focus(clickedNodeId, {
-            scale: 1,
-            animation: {
-                duration: 1000,
-                easingFunction: "easeInOutQuad"
-            }
-        });
-        lastClickedNode = clickedNodeId;
+        var nodeIdToFocus = clickedNodeId;
+
+// Get current viewport
+var currentView = network.getViewPosition();
+
+// Get the canvas (viewport) dimensions
+var canvasWidth = document.getElementById('mynetwork').offsetWidth;
+var canvasHeight = document.getElementById('mynetwork').offsetHeight;
+
+// Calculate desired Y position for the node to be at the top center of the viewport.
+var nodePosition = network.getPositions([nodeIdToFocus])[nodeIdToFocus];
+var desiredX = nodePosition.x //- (nodePosition.x - currentView.x); // Align horizontally in the center
+var desiredY = nodePosition.y - (nodePosition.y + canvasHeight * 0.5); // Put the node 10% from the top
+
+// Use moveTo with the new position
+network.moveTo({
+    position: {
+        x: desiredX,
+        y: desiredY
+    },
+    scale: 1,
+    animation: {
+        duration: 1000,
+        easingFunction: "easeInOutQuad"
+    }
+});
+
+        
         hideLoader(); 
     }, 10);
 }
+lastClickedNode = clickedNodeId;
 });
 // remove traversal nodes if node id is not clickedNodeId defined in another click event
 let originalNodes, originalEdges,traversalNodeIds;
