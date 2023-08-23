@@ -75,8 +75,10 @@
         </div>
         <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
             <div class="explanation">
-                This is the Treemap. Click on a concept block to visualize its descendant concepts below.
+                Explore the Treemap to see key representative concepts, or "Bins". 
+                <br>Click on any concept to view its detailed hierarchy below.
             </div>
+            
             <div id="treemap-container"></div>
 
             <div class="explanation">
@@ -95,13 +97,13 @@
                 <svg width="20" height="20">
                     <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
                 </svg>
-                <span> - Triangles represent additional concepts to enhance the hierarchy</span>
+                <span> - Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy</span>
             </div>
         </div>  
         <br> 
         Network options:   
             <input type="checkbox" id="removeTraversalNodes" > 
-            <label for="removeTraversalNodes">Remove added concepts from LKB</label>
+            <label for="removeTraversalNodes">Remove added triangle concepts</label>
             <button id="increaseFont">Increase Font Size</button>
             <button id="decreaseFont">Decrease Font Size</button>
 
