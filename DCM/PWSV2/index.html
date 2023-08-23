@@ -9,32 +9,81 @@
     <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
     <script src="data.js"></script>
     <style>
+        body {
+    font-family: 'Helvetica', sans-serif;
+    font-size: 14px;
+    background-color: #f7f9fc; /* Light blueish gray */
+    color: #333; /* Dark gray text color for better contrast */
+}
+
 .centered-title {
-            text-align: center;
-            font-weight: bold;
-            font-size: 24px; /* Adjust size as needed */
-            margin-top: 20px; /* Adding some margin for spacing */
-        }
+    text-align: center;
+    font-weight: bold;
+    font-size: 28px; /* Slightly bigger title */
+    margin-top: 30px;
+    margin-bottom: 20px; /* Added margin at the bottom for space */
+}
+.separator {
+    width: 80%; /* Use 80% of parent's width, change as per requirement */
+    margin: 20px auto; /* Center the HR and give 20px vertical space above and below */
+    border: none; /* Remove the default border */
+    border-top: 1px solid #eaeaea; /* Add a subtle top border */
+}
+
+.explanation {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 20px; /* Added margin at the bottom for separation */
+}
+
+#treemap-container {
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* subtle shadow for depth */
+    margin-bottom: 20px; /* Space between treemap and other content */
+}
+
 .legend {
-        display: flex;
-        margin-bottom: 10px;
-    }
-    .legend-item {
-        display: flex;
-        align-items: center;
-        margin-right: 15px;
-    }
-    .legend-item svg {
-        margin-right: 5px;
-    }
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px; /* Space below the legend */
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.legend-item svg {
+    margin-right: 10px;
+}
+
 #mynetwork {
-    width: 100%;          /* Takes up the full width of its parent. */
-    height: 70vh;         /* Takes up 80% of the viewport's height. */
+    width: 100%;
+    height: 70vh;
     border: 1px solid lightgray;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px; /* Space below the network for separation */
+}
+
+button {
+    background: linear-gradient(to right, #6c757d, #8a939a); /* subtle gradient */
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px; /* spacing between buttons */
+    transition: background 0.3s, transform 0.3s; /* Smooth transition for hover effect */
+}
+
+button:hover {
+    background: linear-gradient(to right, #8a939a, #6c757d);
+    transform: scale(1.05); /* Slightly enlarges the button on hover */
 }
 
 .loader {
-    /* Your existing styles */
     position: fixed;
     top: 50%;
     left: 50%;
@@ -44,7 +93,6 @@
 }
 
 .loader-circle {
-    /* Your existing styles for the circle */
     border: 16px solid #f3f3f3;
     border-top: 16px solid #3498db;
     border-radius: 50%;
@@ -56,14 +104,12 @@
 .loader-text {
     text-align: center;
     margin-top: 10px;
-    /* Additional styles for the loading text */
 }
 
 @keyframes spin {
     0% { transform: translate(-50%, -50%) rotate(0deg); }
     100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
-
     </style>
 </head>
 <body>
@@ -74,19 +120,20 @@
 
         </div>
         <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
-            <div class="explanation">
+            <div class="explanation" style="text-align: center; margin-top: 10px;">
                 Explore the Treemap to see key representative concepts, or "Bins". 
-                <br>Click on any concept to view its detailed hierarchy below.
+                <br>Click on a Bin to view its detailed hierarchy below.
             </div>
             
             <div id="treemap-container"></div>
+            <hr class="separator"> 
 
-            <div class="explanation">
+            <div class="explanation" style="text-align: center; margin-top: 10px;">
                 Hierarchical Network of Concept
             <label id="network-title" style="text-align:center; font-weight:bold; margin-bottom: 10px;"></label> <!-- This is the title div -->
-
+                
         </div>
-        <div class="legend">
+        <div class="legend" >
             <div class="legend-item">
                 <svg width="20" height="20">
                     <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
@@ -97,13 +144,17 @@
                 <svg width="20" height="20">
                     <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
                 </svg>
-                <span> - Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy</span>
+                <span> Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy.
+                    <br> Check the box below to remove them from the network.
+                </span>
             </div>
         </div>  
-        <br> 
-        Network options:   
+        <p> 
+        Network options:  
+        <br> </p>
             <input type="checkbox" id="removeTraversalNodes" > 
             <label for="removeTraversalNodes">Remove added triangle concepts</label>
+            
             <button id="increaseFont">Increase Font Size</button>
             <button id="decreaseFont">Decrease Font Size</button>
 
