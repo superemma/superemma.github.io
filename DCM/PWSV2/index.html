@@ -167,7 +167,9 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
     clickedNodeId = data.points[0].id;
         // Find the clicked node in the 'nodes' dataset
     const clickedNode = nodes.find(node => node.id === clickedNodeId);
-    if (clickedNodeId !== lastClickedNode && clickedNode.rank > 2) {
+    if (clickedNode.rank <= 2) {
+        alert("Network not available for concept with higher hierarchy");
+    } else if (clickedNodeId !== lastClickedNode) {
         showLoader();
         setTimeout(function() {
         // Clear the existing nodes and edges
