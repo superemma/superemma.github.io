@@ -29,7 +29,17 @@
     border: none; /* Remove the default border */
     border-top: 1px solid #eaeaea; /* Add a subtle top border */
 }
-
+.treemap-explanation {
+    padding: 15px;
+    /*border: 1px solid #ddd;*/
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    text-align: left;  /* This will left-align the text */
+    max-width: 80%;    /* Optional, you can adjust as needed */
+}
+.treemap-explanation p {
+    margin-bottom: 10px;
+}
 .explanation {
     text-align: center;
     margin-top: 10px;
@@ -119,20 +129,30 @@ button:hover {
         <div style="flex: 0 0 auto; padding-right: 10px;">
 
         </div>
-        <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
-            <div class="explanation" style="text-align: center; margin-top: 10px;">
-                Explore the Treemap to see key representative concepts, or "Bins". 
-                <br>Click on a Bin to view its detailed hierarchy below.
+        <div style="flex: 1 1 auto;justify-content: center;" > <!-- Add relative positioning to the container -->
+            <div class="treemap-explanation" >
+                <h4>Explore the Treemap:</h4>
+                <p>Each block in the treemap represents a key representative concept, or "Bin".
+                    <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values.
+                    <br> The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text.
+                </p>
+                <p>
+                    For instance, if a block labeled "Neurological Disorders" displays "25%", it means that a quarter of all the input concepts from the text are categorized under the Neurological Disorders Bin.
+                </p>
+                <p>Click on a Bin to view its detailed hierarchy below.</p>
             </div>
+            
             
             <div id="treemap-container"></div>
             <hr class="separator"> 
 
-            <div class="explanation" style="text-align: center; margin-top: 10px;">
-                Hierarchical Network of Concept
-            <label id="network-title" style="text-align:center; font-weight:bold; margin-bottom: 10px;"></label> <!-- This is the title div -->
-                
-        </div>
+            <div class="explanation" style="text-align: center;font-weight:bold;  margin-top: 10px;">
+                Detailed Hierarchy Visualization of Concept
+            
+                <label id="network-title" style="text-align:center; font-weight:bold; margin-bottom: 10px;"></label>
+                <p style="font-weight: normal;">This displays the underlying concepts associated with the selected Bin.</p>
+            </div>
+            
         <div class="legend" >
             <div class="legend-item">
                 <svg width="20" height="20">
@@ -349,7 +369,7 @@ var canvasHeight = document.getElementById('mynetwork').offsetHeight;
 // Calculate desired Y position for the node to be at the top center of the viewport.
 var nodePosition = network.getPositions([nodeIdToFocus])[nodeIdToFocus];
 var desiredX = nodePosition.x //- (nodePosition.x - currentView.x); // Align horizontally in the center
-var desiredY = nodePosition.y - (nodePosition.y + canvasHeight * 0.5); // Put the node 10% from the top
+var desiredY = nodePosition.y - (nodePosition.y + canvasHeight * 0.4); // Put the node 10% from the top
 
 // Use moveTo with the new position
 network.moveTo({
