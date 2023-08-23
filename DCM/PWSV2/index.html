@@ -1,10 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Concept Modeling</title>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
     <script src="data.js"></script>
     <style>
+.centered-title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px; /* Adjust size as needed */
+            margin-top: 20px; /* Adding some margin for spacing */
+        }
+.legend {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+    }
+    .legend-item svg {
+        margin-right: 5px;
+    }
 #mynetwork {
     width: 100%;          /* Takes up the full width of its parent. */
     height: 70vh;         /* Takes up 80% of the viewport's height. */
@@ -45,17 +67,45 @@
     </style>
 </head>
 <body>
+    <div class="centered-title">Disease Concept Model of PWS </div> <!-- Centered Title in the body -->
+
     <div style="display: flex;">
         <div style="flex: 0 0 auto; padding-right: 10px;">
 
         </div>
         <div style="flex: 1 1 auto;"> <!-- Add relative positioning to the container -->
+            <div class="explanation">
+                This is the Treemap. Click on a node to visualize its descendant concepts below.
+            </div>
             <div id="treemap-container"></div>
-                <input type="checkbox" id="removeTraversalNodes" > 
-                <label for="removeTraversalNodes">Remove added concepts from LKB</label>
-                <button id="increaseFont">Increase Font Size</button>
-                <button id="decreaseFont">Decrease Font Size</button>
-                <div id="mynetwork"></div>
+
+            <div class="explanation">
+                Hierarchical Network of Concept
+            <label id="network-title" style="text-align:center; font-weight:bold; margin-bottom: 10px;"></label> <!-- This is the title div -->
+
+        </div>
+        <div class="legend">
+            <div class="legend-item">
+                <svg width="20" height="20">
+                    <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
+                </svg>
+                <span> Circles represent concepts directly extracted from text.</span>
+            </div>
+            <div class="legend-item">
+                <svg width="20" height="20">
+                    <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
+                </svg>
+                <span> - Triangles represent additional concepts to enhance the hierarchy</span>
+            </div>
+        </div>  
+        <br> 
+        Network options:   
+            <input type="checkbox" id="removeTraversalNodes" > 
+            <label for="removeTraversalNodes">Remove added concepts from LKB</label>
+            <button id="increaseFont">Increase Font Size</button>
+            <button id="decreaseFont">Decrease Font Size</button>
+
+            <div id="mynetwork"></div>
             <div class="loader" id="loader">
                 <div class="loader-circle"></div>
                 <div class="loader-text">Loading... This might takes a while for large network...</div>
@@ -200,6 +250,8 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
     if (clickedNode.rank <= 2) {
         if (clickedNodeId !== lastClickedNode) {alert("Network not available for concept with higher hierarchy");}
     } else if (clickedNodeId !== lastClickedNode) {
+        document.getElementById('network-title').innerText = clickedNode.preferred_name;
+
         showLoader();
         setTimeout(function() {
         // Clear the existing nodes and edges
@@ -258,8 +310,6 @@ network.moveTo({
         easingFunction: "easeInOutQuad"
     }
 });
-
-        
         hideLoader(); 
     }, 10);
 }
@@ -274,9 +324,9 @@ document.getElementById('removeTraversalNodes').addEventListener('change', funct
         if (e.target.checked) {
             originalNodes = nodesDataset.get();
             originalEdges = edgesDataset.get();
-    console.log("Clicked Node ID:", clickedNodeId);
+    //console.log("Clicked Node ID:", clickedNodeId);
 
-            // Identify nodes with source as 'traversal', excluding the clickedNodeId
+            // Identify nodes with source as 'traversal', excluding the clickedNodeId itself
             let traversalNodeIds = nodesDataset.get({
                 filter: function(node) {
                     return node.source === 'traversal' && node.id !== clickedNodeId;
