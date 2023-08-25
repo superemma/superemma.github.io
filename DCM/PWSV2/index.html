@@ -7,13 +7,17 @@
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
     <script src="data.js"></script>
+    <script src="bins.js"></script>
+
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <div class="centered-title">Disease Concept Model of PWS</div>
+    <div style="text-align:center;"><p>For all concepts and binning results, click <a href="textual_results.html">here</a>.</p></div>
     <div style="display:flex">
       <div style="flex:0 0 auto;padding-right:10px"></div>
       <div style="flex:1 1 auto;justify-content:center">
+
         <div class="treemap-explanation">
           <h4>Explore the Treemap:</h4>
           <p>Each block in the treemap represents a key representative concept, or "Bin". <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values. <br>The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text. </p>
@@ -123,10 +127,7 @@ document.getElementById('decreaseFont').addEventListener('click', function() {
 
 var network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
 
-
 //treemap 
-var bin_ids=['C0008626', 'C1535926', 'C0007682', 'C0042790', 'C0008073', 'C0019247', 'C0027765', 'C0026857', 'C1290884', 'C0004936', 'C0014130', 'C0025517', 'C0012242', 'C1290864', 'C0006826', 'C0178298', 'C0007222', 'C0009782', 'C0027651']
-var ancestor_of_tree=['C0008073', 'C0221198', 'C0334094', 'C0242354', 'C0037088', 'C0012634', 'C1260954', 'C0577559', 'C0027765', 'C2720507', 'C1268086']
 // Gather all nodes for treemap
 var treemap_data = nodes.filter(function(node) {
     return bin_ids.includes(node.id) || ancestor_of_tree.includes(node.id);

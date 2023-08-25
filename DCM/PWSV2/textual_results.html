@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="data.js"></script>
+    <script src="bins.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <title>Binning Results</title>
+</head>
+<body>
+
+<h1>Binning Results</h1>
+<p><a href="index.html">Back to the main page</a></p>
+<div id="resultsContainer"></div>
+
+
+<p><a href="index.html">Back to the main page</a></p>
+
+</body>
+<script type="text/javascript">
+    function displayResults() {
+        const container = document.getElementById("resultsContainer");
+        
+        let resultsHtml = "";
+        bin_ids.forEach(bin => {
+            const node = nodes.find(n => n.id === bin);
+            resultsHtml += `<strong>${bin} (${node.preferred_name})</strong>`;
+            resultsHtml += "<ul>";
+            node.original_descendants_names.forEach(name => {
+                resultsHtml += `<li>${name}</li>`;
+            });
+            resultsHtml += "</ul>";
+        });
+        container.innerHTML = resultsHtml;
+    }
+    
+    // Call the function to populate the results on page load
+    displayResults();
+</script>
+
+</html>
