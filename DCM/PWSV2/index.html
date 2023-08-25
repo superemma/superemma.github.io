@@ -1,217 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Disease Concept Modeling</title>
     <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
     <script src="data.js"></script>
-    <style>
-        body {
-    font-family: 'Helvetica', sans-serif;
-    font-size: 14px;
-    background-color: #f7f9fc; /* Light blueish gray */
-    color: #333; /* Dark gray text color for better contrast */
-}
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="centered-title">Disease Concept Model of PWS</div>
+    <div style="display:flex">
+      <div style="flex:0 0 auto;padding-right:10px"></div>
+      <div style="flex:1 1 auto;justify-content:center">
+        <div class="treemap-explanation">
+          <h4>Explore the Treemap:</h4>
+          <p>Each block in the treemap represents a key representative concept, or "Bin". <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values. <br>The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text. </p>
+          <p>For instance, if a block labeled "Neurological Disorders" displays "25%", it means that a quarter of all the input concepts from the text are categorized under the Neurological Disorders Bin.</p>
+          <p>Click on a Bin to view its detailed hierarchy below.</p>
 
-.centered-title {
-    text-align: center;
-    font-weight: bold;
-    font-size: 28px; /* Slightly bigger title */
-    margin-top: 30px;
-    margin-bottom: 20px; /* Added margin at the bottom for space */
-}
-.separator {
-    width: 80%; /* Use 80% of parent's width, change as per requirement */
-    margin: 20px auto; /* Center the HR and give 20px vertical space above and below */
-    border: none; /* Remove the default border */
-    border-top: 1px solid #eaeaea; /* Add a subtle top border */
-}
-.treemap-explanation {
-    padding: 15px;
-    /*border: 1px solid #ddd;*/
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    text-align: left;  /* This will left-align the text */
-    max-width: 80%;    /* Optional, you can adjust as needed */
-}
-.treemap-explanation p {
-    margin-bottom: 10px;
-}
-.explanation {
-    text-align: center;
-    margin-top: 10px;
-    margin-bottom: 20px; /* Added margin at the bottom for separation */
-}
-
-#treemap-container {
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* subtle shadow for depth */
-    margin-bottom: 20px; /* Space between treemap and other content */
-}
-
-.legend {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-bottom: 20px; /* Space below the legend */
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    margin: 5px 0;
-}
-
-.legend-item svg {
-    margin-right: 10px;
-}
-
-#mynetwork {
-    width: 100%;
-    height: 70vh;
-    border: 1px solid lightgray;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px; /* Space below the network for separation */
-}
-
-button {
-    background: linear-gradient(to right, #6c757d, #8a939a); /* subtle gradient */
-    border: none;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-right: 10px; /* spacing between buttons */
-    transition: background 0.3s, transform 0.3s; /* Smooth transition for hover effect */
-}
-
-button:hover {
-    background: linear-gradient(to right, #8a939a, #6c757d);
-    transform: scale(1.05); /* Slightly enlarges the button on hover */
-}
-
-.loader {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    display: none;
-}
-
-.loader-circle {
-    border: 16px solid #f3f3f3;
-    border-top: 16px solid #3498db;
-    border-radius: 50%;
-    width: 120px;
-    height: 120px;
-    animation: spin 2s linear infinite;
-}
-
-.loader-text {
-    text-align: center;
-    margin-top: 10px;
-}
-
-@keyframes spin {
-    0% { transform: translate(-50%, -50%) rotate(0deg); }
-    100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-    </style>
-</head>
-<body>
-    <div class="centered-title">Disease Concept Model of PWS </div> <!-- Centered Title in the body -->
-
-    <div style="display: flex;">
-        <div style="flex: 0 0 auto; padding-right: 10px;">
-
+          <p><strong>Search Function:</strong> 
+            Use this tool to locate specific concepts extracted from the text or sourced from our Knowledge Base. When you search for a concept, the tool will illuminate its position in the tree. If a concept is found under multiple bins,all bins will be highlighted.
+            </p>
+            </div>
+        <div class="search-container">
+          <input type="text" id="searchInput" placeholder="Search for a concept...">
+          <div id="searchDropdown" class="dropdown-content"></div>
         </div>
-        <div style="flex: 1 1 auto;justify-content: center;" > <!-- Add relative positioning to the container -->
-            <div class="treemap-explanation" >
-                <h4>Explore the Treemap:</h4>
-                <p>Each block in the treemap represents a key representative concept, or "Bin".
-                    <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values.
-                    <br> The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text.
-                </p>
-                <p>
-                    For instance, if a block labeled "Neurological Disorders" displays "25%", it means that a quarter of all the input concepts from the text are categorized under the Neurological Disorders Bin.
-                </p>
-                <p>Click on a Bin to view its detailed hierarchy below.</p>
-            </div>
-            
-            
-            <div id="treemap-container"></div>
-            <hr class="separator"> 
-
-            <div class="explanation" style="text-align: center;font-weight:bold;  margin-top: 10px;">
-                Detailed Hierarchy Visualization of Concept
-            
-                <label id="network-title" style="text-align:center; font-weight:bold; margin-bottom: 10px;"></label>
-                <p style="font-weight: normal;">This displays the underlying concepts associated with the selected Bin.</p>
-            </div>
-            
-        <div class="legend" >
-            <div class="legend-item">
-                <svg width="20" height="20">
-                    <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
-                </svg>
-                <span> Circles represent concepts directly extracted from text.</span>
-            </div>
-            <div class="legend-item">
-                <svg width="20" height="20">
-                    <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
-                </svg>
-                <span> Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy.
-                    <br> Check the box below to remove them from the network.
-                </span>
-            </div>
-        </div>  
-        <p> 
-        Network options:  
-        <br> </p>
-            <input type="checkbox" id="removeTraversalNodes" > 
-            <label for="removeTraversalNodes">Remove added triangle concepts</label>
-            
-            <button id="increaseFont">Increase Font Size</button>
-            <button id="decreaseFont">Decrease Font Size</button>
-
-            <div id="mynetwork"></div>
-            <div class="loader" id="loader">
-                <div class="loader-circle"></div>
-                <div class="loader-text">Loading... This might takes a while for large network...</div>
-            </div>
-            
+        <div id="treemap-container"></div>
+        <hr class="separator">
+        <div class="explanation" style="text-align:center;font-weight:700;margin-top:10px">Detailed Hierarchy Visualization of Concept <label id="network-title" style="text-align:center;font-weight:700;margin-bottom:10px"></label>
+          <p style="font-weight:400">This displays the underlying concepts associated with the selected Bin.</p>
         </div>
-        
+        <div class="legend">
+          <div class="legend-item">
+            <svg width="20" height="20">
+              <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
+            </svg>
+            <span>Circles represent concepts directly extracted from text.</span>
+          </div>
+          <div class="legend-item">
+            <svg width="20" height="20">
+              <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
+            </svg>
+            <span>Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy. <br>Check the box below to remove them from the network. </span>
+          </div>
+        </div>
+        <p>Network options: <br>
+        </p>
+        <input type="checkbox" id="removeTraversalNodes">
+        <label for="removeTraversalNodes">Remove added triangle concepts</label>
+        <button id="increaseFont">Increase Font Size</button>
+        <button id="decreaseFont">Decrease Font Size</button>
+        <div id="mynetwork"></div>
+        <div class="loader" id="loader">
+          <div class="loader-circle"></div>
+          <div class="loader-text">Loading... This might takes a while for large network...</div>
+        </div>
+      </div>
     </div>
-<script type="text/javascript">
-
-    //treemap 
-    var hierarchical_data = [];
-    nodes.forEach(node => {
-        var id = node.id;
-        var preferred_name = node.preferred_name;
-        var value = node.value;
-        var rank = node.rank;
-
-        if (rank >= 2 && rank < 4) {
-            if (value >= 0.05) {
-                hierarchical_data.push(node);
-            }
-        } else if (rank <= 2 && value >= 0.1) {
-            hierarchical_data.push(node);
-        }
-    });
-    hierarchical_data.forEach(item => {
-    if (typeof item.original_descendants_names === 'string') {
-    item.original_descendants_names = item.original_descendants_names.split(',');
-    }
-    });
-
-// Process nodes for vis.js
+    <script type="text/javascript">
+      // Process nodes for vis.js
 var processedNodes = nodes.map(node => {
     return {
         ...node,
@@ -273,6 +123,21 @@ document.getElementById('decreaseFont').addEventListener('click', function() {
 
 var network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
 
+
+//treemap 
+var bin_ids=['C0008626', 'C1535926', 'C0007682', 'C0042790', 'C0008073', 'C0019247', 'C0027765', 'C0026857', 'C1290884', 'C0004936', 'C0014130', 'C0025517', 'C0012242', 'C1290864', 'C0006826', 'C0178298', 'C0007222', 'C0009782', 'C0027651']
+var ancestor_of_tree=['C0008073', 'C0221198', 'C0334094', 'C0242354', 'C0037088', 'C0012634', 'C1260954', 'C0577559', 'C0027765', 'C2720507', 'C1268086']
+// Gather all nodes for treemap
+var treemap_data = nodes.filter(function(node) {
+    return bin_ids.includes(node.id) || ancestor_of_tree.includes(node.id);
+});
+//change data type
+treemap_data.forEach(item => {
+if (typeof item.original_descendants_names === 'string') {
+item.original_descendants_names = item.original_descendants_names.split(',');
+}
+});
+
 // Helper function to gather descendants
 function gatherDescendants(nodeId, data) {
     var descendants = [];
@@ -287,14 +152,16 @@ function gatherDescendants(nodeId, data) {
     }
     return descendants;
 }
-
 var trace = {
     type: 'treemap',
-    labels: hierarchical_data.map(item => item.preferred_name),
-    parents: hierarchical_data.map(item => item.parent),
-    values: hierarchical_data.map(item => item.value),
-    ids: hierarchical_data.map(item => item.id),
-    hovertext: hierarchical_data.map(item => {
+    labels: treemap_data.map(item => item.preferred_name),
+    parents: treemap_data.map(item => item.parent),
+    values: treemap_data.map(item => item.value),
+    ids: treemap_data.map(item => item.id),
+    marker: {
+        colors: treemap_data.map(item => item.color)
+    },
+    hovertext: treemap_data.map(item => {
         if (typeof item.original_descendants_names === 'string') {
             return item.original_descendants_names.split(', ').join('<br>');
         } else {
@@ -307,22 +174,175 @@ var trace = {
 };
 
 var layout = {
-    margin: { t: 0, l: 0, r: 0, b: 0 },
+    title: "Treemap",
+    margin: {t:-0.1 ,l: 0, r: 0, b: 0 },
 };
 
-Plotly.newPlot('treemap-container', [trace], layout);
 
-let clickedNodeId = null;
+Plotly.newPlot('treemap-container', [trace], layout);
+// search concept and highlight
+document.addEventListener("DOMContentLoaded", function() {
+            // Restyle the color to default first
+            Plotly.restyle('treemap-container', {
+            marker: {
+                colors: treemap_data.map(item => item.color)
+            }
+        });
+    // Variables Initialization
+    var searchInput = document.getElementById("searchInput");
+    var dropdown = document.getElementById("searchDropdown");
+    let activeDropdownItemIndex = -1; // To keep track of which dropdown item is currently active.
+
+    // Search Input Key Up Event
+    searchInput.addEventListener("keyup", function(event) {
+
+
+
+        var searchQuery = searchInput.value.toLowerCase().trim();
+        var matchedResults = [];
+        var matchedNodes = nodes.filter(node => node.preferred_name && node.preferred_name.toLowerCase().includes(searchQuery));
+
+        matchedNodes.forEach(matchedNode => {
+            let matchingBlock = treemap_data.find(block => block.id === matchedNode.id);
+
+            if (matchingBlock) {
+                matchedResults.push({
+                    name: matchedNode.preferred_name,
+                    nodeIds: [matchingBlock.id] // Note the array format
+                });
+            } else {
+                let potentialBlocks = treemap_data.filter(block => block.descendants.includes(matchedNode.id));
+                if (potentialBlocks.length) {
+                    let maxRank = Math.max(...potentialBlocks.map(block => block.rank));
+                    let maxRankNodeIds = potentialBlocks.filter(block => block.rank === maxRank).map(block => block.id);
+                    
+                    matchedResults.push({
+                        name: matchedNode.preferred_name,
+                        nodeIds: maxRankNodeIds // Here, multiple nodeIds can be associated with a single name
+                    });
+                }
+            }
+        });
+
+        dropdown.innerHTML = ""; // Clear previous search results
+        if (matchedResults.length > 0) {
+            dropdown.style.display = "block";
+
+            // Populate the dropdown
+            matchedResults.forEach(item => {
+                var dropdownItem = document.createElement("div");
+                dropdownItem.innerText = item.name;
+                dropdownItem.addEventListener("click", function(event) {
+                    // Prevent event propagation to avoid triggering treemap click
+                    event.stopPropagation();
+                    highlightNodes(item.nodeIds); // Modified to handle multiple nodeIds
+                    dropdown.style.display = "none"; // Hide dropdown when an item is selected
+                    activeDropdownItemIndex = -1; // Reset the active index
+                });
+                dropdown.appendChild(dropdownItem);
+            });
+
+        } else {
+            dropdown.style.display = "none";
+            activeDropdownItemIndex = -1; // Reset the active index
+        }
+                // If "Down" arrow key is pressed
+                if (event.keyCode === 40 && dropdown.style.display !== 'none') {
+            if (activeDropdownItemIndex < dropdown.children.length - 1) { 
+                activeDropdownItemIndex++; 
+            }
+            highlightActiveDropdownItem();
+            return;
+        }
+    
+        // If "Up" arrow key is pressed
+        if (event.keyCode === 38 && dropdown.style.display !== 'none') {
+            if (activeDropdownItemIndex > 0) { 
+                activeDropdownItemIndex--; 
+            }
+            highlightActiveDropdownItem();
+            return;
+        }
+
+        // If Enter key is pressed
+        if (event.keyCode === 13) {
+            if (dropdown.style.display !== 'none' && activeDropdownItemIndex !== -1) {
+                dropdown.children[activeDropdownItemIndex].click();
+                return;
+            }
+            // Handle enter key pressed without active dropdown item
+            if (matchedResults.length > 0) {
+                let firstResult = matchedResults[0];
+                highlightNodes(firstResult.nodeIds);
+                dropdown.style.display = "none";
+                return;
+            }
+        }
+    });
+
+    function highlightActiveDropdownItem() {
+        // First, remove any existing highlighted item
+        Array.from(dropdown.children).forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Highlight the active item
+        if (activeDropdownItemIndex !== -1) {
+            dropdown.children[activeDropdownItemIndex].classList.add('active');
+        }
+    }
+
+    function highlightNodes(nodeIds) {
+        // Restyle the color to default first
+        Plotly.restyle('treemap-container', {
+            marker: {
+                colors: treemap_data.map(item => item.color)
+            }
+        });
+
+        const graphDiv = document.getElementById('treemap-container');
+        const currentData = graphDiv.data[0];
+
+        if (!currentData.marker || !currentData.marker.colors) return;
+
+        const updatedColors = [...currentData.marker.colors];  // Create a copy of the current colors
+
+        // Loop through each nodeId and update its color
+        nodeIds.forEach(nodeId => {
+            const nodeIndex = treemap_data.findIndex(item => item.id === nodeId);
+            if (nodeIndex !== -1) {
+                updatedColors[nodeIndex] = 'yellow';  // Use color for highlighting
+            }
+        });
+
+        Plotly.restyle('treemap-container', { 'marker.colors': [updatedColors] });
+    }
+
+});
+
+
 // Treemap click event
+let clickedNodeId = null;
 let lastClickedNode = null;
 document.getElementById('treemap-container').on('plotly_click', function(data) {
-    //uncheck the box
+
     clickedNodeId = data.points[0].id;
-        // Find the clicked node in the 'nodes' dataset
+        // Restyle the color to default first
+        Plotly.restyle('treemap-container', {
+            marker: {
+                colors: treemap_data.map(item => item.color)
+            }
+        });
+    // Find the clicked node in the 'nodes' dataset
     const clickedNode = nodes.find(node => node.id === clickedNodeId);
     if (clickedNode.rank <= 2) {
         if (clickedNodeId !== lastClickedNode) {alert("Network not available for concept with higher hierarchy");}
     } else if (clickedNodeId !== lastClickedNode) {
+            //uncheck the box removeTraversalNodes
+    var checkbox = document.getElementById('removeTraversalNodes');
+    if (checkbox) {
+        checkbox.checked = false;
+    }
         document.getElementById('network-title').innerText = clickedNode.preferred_name;
 
         showLoader();
@@ -333,7 +353,7 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
         document.getElementById('removeTraversalNodes').checked = false;
 
 
-        const descendantsList = gatherDescendants(clickedNodeId, hierarchical_data);
+        const descendantsList = gatherDescendants(clickedNodeId, treemap_data);
         const relevantEdges = edges.filter(edge => descendantsList.includes(edge.from) && descendantsList.includes(edge.to));
 
         // Add the clicked node and its descendants to the dataset
@@ -345,25 +365,19 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
         }
     });
 
-        //console.log("Clicked Node ID:", clickedNodeId);
-        //console.log("Descendants:", descendantsList);
-
     // Iterate through the filtered edges and add them to the dataset
         relevantEdges.forEach(edge => {
             //console.log("Adding edge:", edge);
             edge.arrows = 'to';
             edgesDataset.add(edge);
         });
-
-
         // Zoom into the clicked node
         var nodeIdToFocus = clickedNodeId;
 
 // Get current viewport
 var currentView = network.getViewPosition();
 
-// Get the canvas (viewport) dimensions
-var canvasWidth = document.getElementById('mynetwork').offsetWidth;
+// Get the canvas (viewport) dimensions//var canvasWidth = document.getElementById('mynetwork').offsetWidth;
 var canvasHeight = document.getElementById('mynetwork').offsetHeight;
 
 // Calculate desired Y position for the node to be at the top center of the viewport.
@@ -388,6 +402,8 @@ network.moveTo({
 }
 lastClickedNode = clickedNodeId;
 });
+
+
 // remove traversal nodes if node id is not clickedNodeId defined in another click event
 let originalNodes, originalEdges,traversalNodeIds;
 
@@ -397,7 +413,6 @@ document.getElementById('removeTraversalNodes').addEventListener('change', funct
         if (e.target.checked) {
             originalNodes = nodesDataset.get();
             originalEdges = edgesDataset.get();
-    //console.log("Clicked Node ID:", clickedNodeId);
 
             // Identify nodes with source as 'traversal', excluding the clickedNodeId itself
             let traversalNodeIds = nodesDataset.get({
@@ -472,8 +487,6 @@ function edgeExists(from, to) {
     }).length;
 }
 
-
-
 //loading 
 function showLoader() {
     document.getElementById("loader").style.display = "block";
@@ -482,8 +495,4 @@ function showLoader() {
 function hideLoader() {
     document.getElementById("loader").style.display = "none";
 }
-
-</script>
-
-</body>
-</html>
+</script></body></html>
