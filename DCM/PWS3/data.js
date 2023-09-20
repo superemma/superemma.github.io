@@ -617,5 +617,139 @@ var bin= {
             "C0231218": "general malaise"
         }
     ],
+    "unbinned": [
+        {
+            "C0037088": "Signs and Symptoms"
+        },
+        {
+            "C1535926": "Neurodevelopmental Disorders"
+        },
+        {
+            "C0152021": "Congenital heart disease"
+        },
+        {
+            "C0001418": "Adenocarcinoma"
+        },
+        {
+            "C0030472": "Paraneoplastic Syndromes"
+        },
+        {
+            "C0233535": "Butting"
+        },
+        {
+            "C0010626": "Embryonic cyst"
+        },
+        {
+            "C0013080": "Down Syndrome"
+        },
+        {
+            "C0008679": "Chronic disease"
+        },
+        {
+            "C0019247": "Hereditary Diseases"
+        },
+        {
+            "C0233660": "Mental blocking"
+        },
+        {
+            "C0277562": "Adult disease"
+        },
+        {
+            "C1306459": "Primary malignant neoplasm"
+        },
+        {
+            "C0000768": "Congenital Abnormality"
+        },
+        {
+            "C0020524": "Disorders of Excessive Somnolence"
+        },
+        {
+            "C0009450": "Communicable Diseases"
+        },
+        {
+            "C0020557": "Hypertriglyceridemia"
+        },
+        {
+            "C0564567": "Impulsive character (finding)"
+        },
+        {
+            "C3266843": "47, XYY syndrome"
+        },
+        {
+            "C0033377": "Ptosis"
+        },
+        {
+            "C2931707": "Chromosome 15, trisomy mosaicism"
+        },
+        {
+            "C0851578": "Sleep Disorders"
+        },
+        {
+            "C0332875": "Congenital webbing"
+        },
+        {
+            "C1853490": "22q13.3 Deletion Syndrome"
+        },
+        {
+            "C0012634": "Disease"
+        },
+        {
+            "C0265267": "Congenital Hemidysplasia with Ichthyosiform Erythroderma and Limb Defects"
+        },
+        {
+            "C0027651": "Neoplasms"
+        },
+        {
+            "C1846009": "Intrauterine growth restriction, metaphyseal dysplasia, adrenal hypoplasia congenita, and genital anomaly syndrome"
+        },
+        {
+            "C0242354": "Congenital Disorders"
+        },
+        {
+            "C0236816": "Stress Disorders, Traumatic, Acute"
+        },
+        {
+            "C0020175": "Hunger"
+        },
+        {
+            "C0013336": "Dwarfism"
+        },
+        {
+            "C0152096": "Complete trisomy 18 syndrome"
+        },
+        {
+            "C0008626": "Congenital chromosomal disease"
+        },
+        {
+            "C0013473": "Eating Disorders"
+        },
+        {
+            "C0524528": "Pervasive Development Disorder"
+        },
+        {
+            "C0231243": "Early complication"
+        },
+        {
+            "C0006826": "Malignant Neoplasms"
+        },
+        {
+            "C0025517": "Metabolic Diseases"
+        },
+        {
+            "C0242339": "Dyslipidemias"
+        },
+        {
+            "C0949628": "Uniparental Disomy"
+        },
+        {
+            "C0007222": "Cardiovascular Diseases"
+        },
+        {
+            "C0518214": "Perceived quality of life"
+        },
+        {
+            "C0270549": "Generalized Anxiety Disorder"
+        }
+    ],
     "ENT": []
 }
