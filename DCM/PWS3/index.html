@@ -64,6 +64,46 @@
       </div>
     </div>
     <script type="text/javascript">
+        //treemap
+// Process the data for the treemap
+let parents = [];
+let labels = [];
+let values = [];
+let hoverTexts = []; 
+let totalConditions = 0;
+
+// Calculate the total number of conditions across all organ systems
+for (let organ in bin) {
+    totalConditions += bin[organ].length;
+}
+
+// Add the root node
+labels.push('Organ Systems');
+values.push(totalConditions);  // Total number of conditions
+parents.push('');
+hoverTexts.push('Organ Systems');
+for (let organ in bin) {
+    parents.push('Organ Systems');
+    labels.push(organ);
+    values.push(bin[organ].length); // Number of conditions in this organ system
+        // Create the hover text for the organ
+    let concepts = bin[organ].map(concept => Object.values(concept)[0]);
+    hoverTexts.push(concepts.join('<br>'));
+}
+
+// Plotting the treemap
+// Plotting the treemap
+Plotly.newPlot('treemap-container', [{
+    type: "treemap",
+    labels: labels,
+    parents: parents,
+    values: values,
+    hoverinfo: 'label+text',
+    hovertext: hoverTexts
+}], {
+    title: 'Organ Systems Treemap'
+});
+
       // Process nodes for vis.js
 var processedNodes = nodes.map(node => {
     return {
@@ -126,60 +166,7 @@ document.getElementById('decreaseFont').addEventListener('click', function() {
 
 var network = new vis.Network(container, { nodes: nodesDataset, edges: edgesDataset }, options);
 
-//treemap 
-// Gather all nodes for treemap
-var treemap_data = nodes.filter(function(node) {
-    return bin_ids.includes(node.id) || ancestor_of_tree.includes(node.id);
-});
-//change data type
-treemap_data.forEach(item => {
-if (typeof item.original_descendants_names === 'string') {
-item.original_descendants_names = item.original_descendants_names.split(',');
-}
-});
 
-// Helper function to gather descendants
-function gatherDescendants(nodeId, data) {
-    var descendants = [];
-    for (let item of data) {
-        if (item.id === nodeId) {
-            descendants.push(item.id);
-            if (item.descendants) {
-                descendants = descendants.concat(item.descendants);
-            }
-            break;
-        }
-    }
-    return descendants;
-}
-var trace = {
-    type: 'treemap',
-    labels: treemap_data.map(item => item.preferred_name),
-    parents: treemap_data.map(item => item.parent),
-    values: treemap_data.map(item => item.value),
-    ids: treemap_data.map(item => item.id),
-    marker: {
-        colors: treemap_data.map(item => item.color)
-    },
-    hovertext: treemap_data.map(item => {
-        if (typeof item.original_descendants_names === 'string') {
-            return item.original_descendants_names.split(', ').join('<br>');
-        } else {
-            return item.original_descendants_names.join('<br>');
-        }
-    }),
-    hoverinfo: 'label+text',//+percent entry
-    textinfo: 'label+text+value',
-    texttemplate: '%{label}<br>%{value:.1%} of all concepts', 
-};
-
-var layout = {
-    title: "Treemap",
-    margin: {t:-0.1 ,l: 0, r: 0, b: 0 },
-};
-
-
-Plotly.newPlot('treemap-container', [trace], layout);
 // search concept and highlight
 document.addEventListener("DOMContentLoaded", function() {
             // Restyle the color to default first

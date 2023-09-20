@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="data.js"></script>
+    <script src="bins.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <title>Binning Results</title>
+</head>
+<body>
+
+<h1>Binning Results</h1>
+<p><a href="index.html">Back to the main page</a></p>
+<div id='bin-list'></div>
+
+
+
+<p><a href="index.html">Back to the main page</a></p>
+
+</body>
+<script type="text/javascript">
+    function displayBins() {
+        var binList = document.getElementById('bin-list');
+        for (var organ in bin) {
+            var organItem = document.createElement('ul');
+            var organName = document.createElement('li');
+            organName.textContent = organ;
+            binList.appendChild(organName);
+
+            var conceptsList = document.createElement('ul');
+            bin[organ].forEach(concept => {
+                var conceptID = Object.keys(concept)[0];
+                var conceptName = concept[conceptID];
+                var conceptItem = document.createElement('li');
+                conceptItem.textContent = conceptName + ' (' + conceptID + ')';
+                conceptsList.appendChild(conceptItem);
+            });
+
+            binList.appendChild(conceptsList);
+        }
+    }
+
+    // Call the function after the DOM has loaded
+    window.onload = function() {
+        displayBins();
+    }
+</script>
+
+</html>
