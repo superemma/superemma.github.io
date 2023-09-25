@@ -1,3 +1,22 @@
+var organColors = {
+    'General Well-Being': '#e57373',  // Red
+    'ENT': '#f06292',  // Pink
+    'Visual': '#ba68c8',  // Purple
+    'Integumentary': '#9575cd',  // Deep Purple
+    'Endocrine': '#7986cb',  // Indigo
+    'Digestive': '#64b5f6',  // Blue
+    'Urinary': '#4fc3f7',  // Light Blue
+    'Reproductive': '#4dd0e1',  // Cyan
+    'Genitourinary': '#4db6ac',  // Teal
+    'Lymphatic-Immune': '#81c784',  // Green
+    'Cardiovascular': '#aed581',  // Light Green
+    'Respiratory': '#dce775',  // Lime
+    'Musculoskeletal': '#ffd54f',  // Yellow
+    'Nervous': '#ffb74d',  // Orange
+    'Mental Health': '#ff8a65',  // Deep Orange
+    'unbinned': '#a1887f'  // Brown
+};
+
 var organ_systems_to_roots=[{
     "General Well-Being": [
         "C1286942"

@@ -8,6 +8,8 @@
     <script src="https://cdn.plot.ly/plotly-2.25.2.min.js" charset="utf-8"></script>
     <script src="data.js"></script>
     <script src="bins.js"></script>
+    <script src="nodes.js"></script>
+    <script src="edges.js"></script>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -68,50 +70,63 @@
     <script type="text/javascript">
         //treemap
 // Process the data for the treemap
-let parents = [];
-let labels = [];
-let values = [];
-let hoverTexts = []; 
-let totalConditions = 0;
+var treemap_data = [];
 
-// Calculate the total number of conditions across all organ systems
-for (let organ in bin) {
-    totalConditions += bin[organ].length;
-}
-
-// Add the root node
-labels.push('Organ Systems');
-values.push(totalConditions);  // Total number of conditions
-parents.push('');
-hoverTexts.push('Organ Systems');
-for (let organ in bin) {
-    parents.push('Organ Systems');
-    labels.push(organ);
-    values.push(bin[organ].length); // Number of conditions in this organ system
-        // Create the hover text for the organ
-    let concepts = bin[organ].map(concept => Object.values(concept)[0]);
-    hoverTexts.push(concepts.join('<br>'));
-}
-
-// Plotting the treemap
-// Plotting the treemap
-Plotly.newPlot('treemap-container', [{
-    type: "treemap",
-    labels: labels,
-    parents: parents,
-    values: values,
-    hoverinfo: 'label+text',
-    hovertext: hoverTexts
-}], {
-    title: 'Organ Systems Treemap'
+// Collect preferred names under each organ system
+var nodeNamesUnderOrgan = {};
+nodes.forEach(node => {
+    if (node.organs && node.preferred_name) {
+        node.organs.forEach(organ => {
+            if (nodeNamesUnderOrgan[organ]) {
+                nodeNamesUnderOrgan[organ].push(node.preferred_name);
+            } else {
+                nodeNamesUnderOrgan[organ] = [node.preferred_name];
+            }
+        });
+    }
 });
+
+// Add organ system nodes
+Object.keys(nodeNamesUnderOrgan).forEach(organ => {
+    treemap_data.push({
+        id: organ,
+        preferred_name: organ,
+        parent: "",  // Root
+        value: nodeNamesUnderOrgan[organ].length,
+        color: organColors[organ],
+        hover_names: nodeNamesUnderOrgan[organ]
+    });
+});
+
+var trace = {
+    type: 'treemap',
+    labels: treemap_data.map(item => item.preferred_name),
+    parents: treemap_data.map(item => item.parent),
+    values: treemap_data.map(item => item.value),
+    ids: treemap_data.map(item => item.id),
+    marker: {
+        colors: treemap_data.map(item => item.color)
+    },
+    hovertext: treemap_data.map(item => item.hover_names.join('<br>')),
+    hoverinfo: 'label+text',
+    textinfo: 'label+value',
+    texttemplate: '%{label}<br>%{value} concepts', 
+};
+
+var layout = {
+    title: "Treemap",
+    margin: {t:-0.1 ,l: 0, r: 0, b: 0 },
+};
+
+// Plotting the treemap
+Plotly.newPlot('treemap-container', [trace], layout);
+
 
       // Process nodes for vis.js
 var processedNodes = nodes.map(node => {
     return {
         ...node,
         title:node.id,
-        level: node.rank,
         label: node.preferred_name,
         shape: node.source === "original" ? "dot" : "triangle"
     };
@@ -192,27 +207,15 @@ document.addEventListener("DOMContentLoaded", function() {
         var matchedNodes = nodes.filter(node => node.preferred_name && node.preferred_name.toLowerCase().includes(searchQuery));
 
         matchedNodes.forEach(matchedNode => {
-            let matchingBlock = treemap_data.find(block => block.id === matchedNode.id);
-
-            if (matchingBlock) {
-                matchedResults.push({
-                    name: matchedNode.preferred_name,
-                    nodeIds: [matchingBlock.id] // Note the array format
-                });
-            } else {
-                let potentialBlocks = treemap_data.filter(block => block.descendants.includes(matchedNode.id));
-                if (potentialBlocks.length) {
-                    let maxRank = Math.max(...potentialBlocks.map(block => block.rank));
-                    let maxRankNodeIds = potentialBlocks.filter(block => block.rank === maxRank).map(block => block.id);
-                    
+            if (matchedNode.organs && matchedNode.organs.length > 0) {
+                matchedNode.organs.forEach(organ => {
                     matchedResults.push({
                         name: matchedNode.preferred_name,
-                        nodeIds: maxRankNodeIds // Here, multiple nodeIds can be associated with a single name
+                        organId: organ
                     });
-                }
+                });
             }
         });
-
         dropdown.innerHTML = ""; // Clear previous search results
         if (matchedResults.length > 0) {
             dropdown.style.display = "block";
@@ -308,7 +311,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
 });
-
 
 // Treemap click event
 let clickedNodeId = null;
