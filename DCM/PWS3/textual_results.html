@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="data.js"></script>
+    <script src="nodes.js"></script>
+
     <script src="bins.js"></script>
     <link rel="stylesheet" href="styles.css">
     <title>Binning Results</title>
@@ -20,31 +22,57 @@
 
 </body>
 <script type="text/javascript">
-    function displayBins() {
-        var binList = document.getElementById('bin-list');
-        for (var organ in bin) {
-            var organItem = document.createElement('ul');
-            var organName = document.createElement('li');
-            organName.textContent = organ;
-            binList.appendChild(organName);
 
-            var conceptsList = document.createElement('ul');
-            bin[organ].forEach(concept => {
-                var conceptID = Object.keys(concept)[0];
-                var conceptName = concept[conceptID];
-                var conceptItem = document.createElement('li');
-                conceptItem.textContent = conceptName + ' (' + conceptID + ')';
-                conceptsList.appendChild(conceptItem);
-            });
 
-            binList.appendChild(conceptsList);
-        }
+// Filter nodes where source is "original"
+var originalNodes = nodes.filter(node => node.source === "original");
+
+// Create a mapping of organ to nodes
+var organMapping = {};
+originalNodes.forEach(node => {
+    if (node.organs && node.organs.length > 0) {
+        node.organs.forEach(organ => {
+            if (!organMapping[organ]) organMapping[organ] = [];
+            organMapping[organ].push(node);
+        });
+    } else {
+        if (!organMapping['unbinned']) organMapping['unbinned'] = [];
+        organMapping['unbinned'].push(node);
     }
+});
 
-    // Call the function after the DOM has loaded
-    window.onload = function() {
-        displayBins();
-    }
+// Sort organ names based on the number of nodes, with 'unbinned' at the end
+var sortedOrgans = Object.keys(organMapping).sort((a, b) => {
+    if (a === 'unbinned') return 1;
+    if (b === 'unbinned') return -1;
+    return organMapping[a].length - organMapping[b].length;
+});
+
+// Create a container to hold the output
+var outputContainer = document.createElement('div');
+
+// Iterate through sorted organ names and append them to the container
+sortedOrgans.forEach(organ => {
+    var organHeading = document.createElement('h4');
+    organHeading.textContent = organ;
+    outputContainer.appendChild(organHeading);
+    
+    var ulElement = document.createElement('ul');
+    organMapping[organ].forEach(node => {
+        var liElement = document.createElement('li');
+        liElement.textContent = `${node.preferred_name} (${node.id})`;
+        ulElement.appendChild(liElement);
+    });
+    outputContainer.appendChild(ulElement);
+});
+
+// Get the 'bin-list' div
+var binListDiv = document.getElementById('bin-list');
+
+// Append the outputContainer to the 'bin-list' div
+binListDiv.appendChild(outputContainer);
+
+    
 </script>
 
 </html>

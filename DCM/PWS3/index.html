@@ -14,53 +14,56 @@
   </head>
   <body>
     <div class="centered-title">Disease Concept Model of PWS</div>
-    <div style="text-align:center;"><p>For all concepts and binning results, click <a href="textual_results.html">here</a>.</p></div>
+    <div style="text-align:center;"><p>For all concepts and binning results in list view, click <a href="textual_results.html">here</a>.</p></div>
     <div style="display:flex">
       <div style="flex:0 0 auto;padding-right:10px"></div>
       <div style="flex:1 1 auto;justify-content:center">
 
         <div class="treemap-explanation">
           <h4>Explore the Treemap:</h4>
-          <p>Each block in the treemap represents an organ system, or "Bin". <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values. <br>The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text. </p>
-          <p>For instance, if a block labeled "Nervous" displays "25%", it means that a quarter of all the input concepts from the text are categorized under the Nervous system.</p>
-          <p>unbinned concepts are either not found to be associated with any organ system as reflected by UMLS2020AB, like high level concepts "Disease", "Sign or symptoms", or the concept is a disease/disorder/ or other concepts that are not considered as symptoms</p>
-
-          <p>Click on a Bin to view its detailed hierarchy below.</p>
-
-          <p><strong>Search Function:</strong> 
-            Use this tool to locate specific concepts extracted from the text or sourced from our Knowledge Base. When you search for a concept, the tool will illuminate its position in the tree. If a concept is found under multiple bins,all bins will be highlighted.
-            </p>
+          <p>Each block in the treemap represents an organ system, or "Bin". <br>The area of each block in the treemap corresponds to the quantity or magnitude of the data it represents. Larger blocks represent higher values, while smaller blocks represent lower values.
+            <br>The value displayed on each block, expressed as a percentage, signifies the proportion of descendant concepts that fall under that particular Bin relative to all input concepts from the text. 
+            For instance, if a block labeled "Nervous" displays "25%", it means that a quarter of all the input concepts from the text are categorized under the Nervous system.</p>
             </div>
-        <div class="search-container">
-          <input type="text" id="searchInput" placeholder="Search for a concept...">
-          <div id="searchDropdown" class="dropdown-content"></div>
-        </div>
+
         <div id="treemap-container"></div>
+        <div class="search-explanation">
+            <div>
+                <p><strong>Search and Visualize a Concept:</strong>
+                    Use this tool to search for any concept extracted from the text and its hierarchy.It will illuminate its bin(s) in the treemap above.</p> <p> It will also display the shortest paths of the searched concepts to the root concepts of the organ system it was binned.
+                </p>
+                          </div>
+    
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for a concept...">
+            <div id="searchDropdown" class="dropdown-content"></div>
+
+          </div>
+          <div id="searchResultDisplay">Search Result </div>
+        
+          <p>Note: Unbinned concepts are either not found to be associated with any organ system, as reflected by UMLS2020AB, or are high-level concepts such as "Disease" or "Sign or Symptoms". Alternatively, the concept may be a disease, disorder, or other types of concepts that are not considered symptoms.</p>
+
         <hr class="separator">
-        <div class="explanation" style="text-align:center;font-weight:700;margin-top:10px">Detailed Hierarchy Visualization of Concept <label id="network-title" style="text-align:center;font-weight:700;margin-bottom:10px"></label>
-          <p style="font-weight:400">This displays the underlying concepts associated with the selected Bin.</p>
+        <div class="explanation" style="text-align:center;font-weight:700;margin-top:10px">Enriched Hierarchy Visualization of Searched Concept <label id="network-title" style="text-align:center;font-weight:700;margin-bottom:10px"></label>
+
         </div>
-        <div class="legend">
-          <div class="legend-item">
-            <svg width="20" height="20">
-              <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
-            </svg>
-            <span>Circles represent concepts directly extracted from text.</span>
-          </div>
-          <div class="legend-item">
-            <svg width="20" height="20">
-              <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
-            </svg>
-            <span>Triangles represent additional concepts from external Knowledge Base to enhance the hierarchy. <br>Check the box below to remove them from the network. </span>
-          </div>
-        </div>
-        <p>Network options: <br>
-        </p>
+
+        <p>Network options: </p>
         <input type="checkbox" id="removeTraversalNodes">
         <label for="removeTraversalNodes">Remove added triangle concepts</label>
         <button id="increaseFont">Increase Font Size</button>
         <button id="decreaseFont">Decrease Font Size</button>
-        <div id="mynetwork"></div>
+        <div id="mynetwork">
+            <div id="network-legend-container">
+                <!-- Legend entries will go here -->
+                <div class="legend-entry">
+                    <div class="color-box" style="background-color: #FF0000;"></div>
+                    <div class="tui-name-label">Example Label</div>
+                </div>
+            </div>
+        </div>
+        
         <div class="loader" id="loader">
           <div class="loader-circle"></div>
           <div class="loader-text">Loading... This might takes a while for large network...</div>
@@ -74,28 +77,36 @@ var treemap_data = [];
 
 // Collect preferred names under each organ system
 var nodeNamesUnderOrgan = {};
+var totalOriginalNodes = 0;
+
 nodes.forEach(node => {
-    if (node.organs && node.preferred_name) {
-        node.organs.forEach(organ => {
-            if (nodeNamesUnderOrgan[organ]) {
-                nodeNamesUnderOrgan[organ].push(node.preferred_name);
-            } else {
-                nodeNamesUnderOrgan[organ] = [node.preferred_name];
-            }
-        });
+    if (node.source === "original") {
+        totalOriginalNodes++;
+        if (node.organs && node.preferred_name) {
+            node.organs.forEach(organ => {
+                if (nodeNamesUnderOrgan[organ]) {
+                    nodeNamesUnderOrgan[organ].push(node.preferred_name);
+                } else {
+                    nodeNamesUnderOrgan[organ] = [node.preferred_name];
+                }
+            });
+        }
     }
 });
 
 // Add organ system nodes
 Object.keys(nodeNamesUnderOrgan).forEach(organ => {
-    treemap_data.push({
-        id: organ,
-        preferred_name: organ,
-        parent: "",  // Root
-        value: nodeNamesUnderOrgan[organ].length,
-        color: organColors[organ],
-        hover_names: nodeNamesUnderOrgan[organ]
-    });
+    if (organ !== "unbinned") {
+        var percentageValue = (nodeNamesUnderOrgan[organ].length / totalOriginalNodes) * 100;
+        treemap_data.push({
+            id: organ,
+            preferred_name: organ,
+            parent: "",  // Root
+            value: percentageValue,
+            color: organColors[organ],
+            hover_names: nodeNamesUnderOrgan[organ]
+        });
+    }
 });
 
 var trace = {
@@ -110,16 +121,17 @@ var trace = {
     hovertext: treemap_data.map(item => item.hover_names.join('<br>')),
     hoverinfo: 'label+text',
     textinfo: 'label+value',
-    texttemplate: '%{label}<br>%{value} concepts', 
+    texttemplate: '%{label}<br>%{value:.2f}% concepts',  // Displaying value as percentage
 };
 
 var layout = {
     title: "Treemap",
-    margin: {t:-0.1 ,l: 0, r: 0, b: 0 },
+    margin: {t:-1 ,l: 0, r: 0, b: 0 },
 };
 
 // Plotting the treemap
 Plotly.newPlot('treemap-container', [trace], layout);
+
 
 
       // Process nodes for vis.js
@@ -199,40 +211,59 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Search Input Key Up Event
     searchInput.addEventListener("keyup", function(event) {
-
-
-
         var searchQuery = searchInput.value.toLowerCase().trim();
+        var searchResultDisplay = document.getElementById("searchResultDisplay");
+    
         var matchedResults = [];
-        var matchedNodes = nodes.filter(node => node.preferred_name && node.preferred_name.toLowerCase().includes(searchQuery));
+var matchedNodes = nodes.filter(node => node.preferred_name && node.preferred_name.toLowerCase().includes(searchQuery));
 
-        matchedNodes.forEach(matchedNode => {
-            if (matchedNode.organs && matchedNode.organs.length > 0) {
-                matchedNode.organs.forEach(organ => {
-                    matchedResults.push({
-                        name: matchedNode.preferred_name,
-                        organId: organ
-                    });
-                });
-            }
-        });
+matchedNodes.forEach(matchedNode => {
+    if (matchedNode.organs && matchedNode.organs.length > 0) {
+        // Check if an entry with the same preferred_name already exists in matchedResults
+        var existingEntry = matchedResults.find(item => item.name === matchedNode.preferred_name);
+        if (existingEntry) {
+            // If an entry with the same preferred_name exists, append the new organIds to the existing entry
+            existingEntry.organIds = existingEntry.organIds.concat(matchedNode.organs);
+        } else {
+            // If no entry with the same preferred_name exists, create a new entry with the name and organIds
+            matchedResults.push({
+                id:matchedNode.id,
+                name: matchedNode.preferred_name,
+                organIds: matchedNode.organs
+            });
+        }
+    }
+}); //console.log(matchedResults);
+
+
         dropdown.innerHTML = ""; // Clear previous search results
         if (matchedResults.length > 0) {
             dropdown.style.display = "block";
 
-            // Populate the dropdown
-            matchedResults.forEach(item => {
-                var dropdownItem = document.createElement("div");
-                dropdownItem.innerText = item.name;
-                dropdownItem.addEventListener("click", function(event) {
-                    // Prevent event propagation to avoid triggering treemap click
-                    event.stopPropagation();
-                    highlightNodes(item.nodeIds); // Modified to handle multiple nodeIds
-                    dropdown.style.display = "none"; // Hide dropdown when an item is selected
-                    activeDropdownItemIndex = -1; // Reset the active index
-                });
-                dropdown.appendChild(dropdownItem);
-            });
+// Populate the dropdown
+matchedResults.forEach(item => {
+    var dropdownItem = document.createElement("div");
+    dropdownItem.innerText = item.name;
+
+    // Set a custom attribute to store the organIds
+    dropdownItem.dataset.organIds = JSON.stringify(item.organIds);
+    
+    dropdownItem.addEventListener("click", function(event) {
+        // Prevent event propagation to avoid triggering treemap click
+        event.stopPropagation();
+
+        // Retrieve the organIds from the custom attribute
+        var organIds = JSON.parse(event.currentTarget.dataset.organIds);
+        
+        highlightNodes(filterUnbinnedOrgans(organIds));
+        generate_hierarchy(item.id)
+        searchResultDisplay.innerHTML = `Concept <strong>${item.id}:${item.name}</strong> is binned in organ system(s): <strong>${organIds}</strong>`;
+        
+        dropdown.style.display = "none"; // Hide dropdown when an item is selected
+        activeDropdownItemIndex = -1; // Reset the active index
+    });
+    dropdown.appendChild(dropdownItem);
+});
 
         } else {
             dropdown.style.display = "none";
@@ -265,13 +296,21 @@ document.addEventListener("DOMContentLoaded", function() {
             // Handle enter key pressed without active dropdown item
             if (matchedResults.length > 0) {
                 let firstResult = matchedResults[0];
-                highlightNodes(firstResult.nodeIds);
+                highlightNodes(filterUnbinnedOrgans(firstResult.organIds));
+
+                generate_hierarchy(firstResult.id);
+
                 dropdown.style.display = "none";
-                return;
+                // Display the search result
+            let organs = firstResult.organIds.join(', ');
+            searchResultDisplay.innerHTML = `Concept <strong>${firstResult.id}:${firstResult.name}</strong> is binned in organ system(s): <strong>${organs}</strong>`;
+            return;
             }
         }
     });
-
+    function filterUnbinnedOrgans(organIds) {
+    return organIds.filter(organId => organId !== "unbinned");
+}
     function highlightActiveDropdownItem() {
         // First, remove any existing highlighted item
         Array.from(dropdown.children).forEach(item => {
@@ -284,57 +323,85 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function highlightNodes(nodeIds) {
-        // Restyle the color to default first
-        Plotly.restyle('treemap-container', {
-            marker: {
-                colors: treemap_data.map(item => item.color)
-            }
-        });
+function highlightNodes(organIds) {
+    // Restyle the color to default first
+    //console.log("highlightNodes called with organIds:", organIds);
+    Plotly.restyle('treemap-container', {
+        marker: {
+            colors: treemap_data.map(item => item.color)
+        }
+    });
 
-        const graphDiv = document.getElementById('treemap-container');
-        const currentData = graphDiv.data[0];
+    const graphDiv = document.getElementById('treemap-container');
+    const currentData = graphDiv.data[0];
 
-        if (!currentData.marker || !currentData.marker.colors) return;
+    if (!currentData.marker || !currentData.marker.colors) return;
 
-        const updatedColors = [...currentData.marker.colors];  // Create a copy of the current colors
+    const updatedColors = [...currentData.marker.colors];  // Create a copy of the current colors
 
-        // Loop through each nodeId and update its color
-        nodeIds.forEach(nodeId => {
-            const nodeIndex = treemap_data.findIndex(item => item.id === nodeId);
-            if (nodeIndex !== -1) {
-                updatedColors[nodeIndex] = 'yellow';  // Use color for highlighting
-            }
-        });
+    // Loop through each organId and update its color
+    organIds.forEach(organId => {
+        const organIndex = treemap_data.findIndex(item => item.id === organId);
+        if (organIndex !== -1) {
+            updatedColors[organIndex] = 'yellow';  // Use color for highlighting
+        }
+    });
 
-        Plotly.restyle('treemap-container', { 'marker.colors': [updatedColors] });
-    }
+    Plotly.restyle('treemap-container', { 'marker.colors': [updatedColors] });
+}
+
 
 });
+//Tui color
 
-// Treemap click event
-let clickedNodeId = null;
-let lastClickedNode = null;
-document.getElementById('treemap-container').on('plotly_click', function(data) {
-
-    clickedNodeId = data.points[0].id;
-        // Restyle the color to default first
-        Plotly.restyle('treemap-container', {
-            marker: {
-                colors: treemap_data.map(item => item.color)
-            }
+// Step 1: Find all unique TUIs
+var uniqueTUIs = new Set();
+nodes.forEach(node => {
+    if (node.semantic_types) {
+        node.semantic_types.forEach(tui => {
+            uniqueTUIs.add(tui);
         });
-    // Find the clicked node in the 'nodes' dataset
-    const clickedNode = nodes.find(node => node.id === clickedNodeId);
-    if (clickedNode.rank <= 2) {
-        if (clickedNodeId !== lastClickedNode) {alert("Network not available for concept with higher hierarchy");}
-    } else if (clickedNodeId !== lastClickedNode) {
+    }
+});
+
+// Step 3: Create a color mapping for the TUIs in uniqueTUIs
+var TUI_color_mappings = {};
+
+var numberOfTUIs = uniqueTUIs.size;
+var hueStep = 360 / numberOfTUIs;
+
+var colorIndex = 0;
+uniqueTUIs.forEach(tui => {
+    var hue = colorIndex * hueStep;
+    var color = `hsl(${hue}, 100%, 50%)`;
+    TUI_color_mappings[tui] = color;
+    colorIndex++;
+});
+
+
+function generate_hierarchy(nodeId){
+
+    // Find the searched node in the 'nodes' dataset
+    const clickedNode = nodes.find(node => node.id === nodeId);
+    if (!clickedNode ){
+    const errorMessage ='Concept with CUI:'+nodeId+' not found .';
+    console.error(errorMessage);
+    window.alert(errorMessage);
+    return;
+}
+if ( !clickedNode.shortest_paths_to_organ_root) {
+    const errorMessage = 'Concept '+ clickedNode.preferred_name+' not binned.' ;
+    console.error(errorMessage);
+    window.alert(errorMessage);
+    return;
+}
+
             //uncheck the box removeTraversalNodes
     var checkbox = document.getElementById('removeTraversalNodes');
     if (checkbox) {
         checkbox.checked = false;
     }
-        document.getElementById('network-title').innerText = clickedNode.preferred_name;
+        document.getElementById('network-title').innerText = clickedNode.id+':'+clickedNode.preferred_name;
 
         showLoader();
         setTimeout(function() {
@@ -343,44 +410,37 @@ document.getElementById('treemap-container').on('plotly_click', function(data) {
         edgesDataset.clear();
         document.getElementById('removeTraversalNodes').checked = false;
 
-
-        const descendantsList = gatherDescendants(clickedNodeId, treemap_data);
-        const relevantEdges = edges.filter(edge => descendantsList.includes(edge.from) && descendantsList.includes(edge.to));
-
-        // Add the clicked node and its descendants to the dataset
-        descendantsList.forEach(function(descendantId) {
-        var node = processedNodes.find(n => n.id === descendantId);
-        if (node && !nodesDataset.get(node.id)) {
-            nodesDataset.add(node);
-
-        }
-    });
-
-    // Iterate through the filtered edges and add them to the dataset
+        // Add the unique nodes from all shortest paths to nodesDataset
+        const paths = Object.values(clickedNode.shortest_paths_to_organ_root).flat();
+        const uniqueNodeIds = [...new Set(paths)];
+        let displayedTUIs = new Set();
+        uniqueNodeIds.forEach(nodeId => {
+            const node = processedNodes.find(n => n.id === nodeId);
+            if (node) {
+                const firstTUI = node.semantic_types[0];
+                node.color = TUI_color_mappings[firstTUI];
+                displayedTUIs.add(firstTUI);
+                nodesDataset.add(node);}
+        });
+        
+        // Filter the edges and add them to edgesDataset
+        const relevantEdges = edges.filter(edge => uniqueNodeIds.includes(edge.from) && uniqueNodeIds.includes(edge.to));
         relevantEdges.forEach(edge => {
-            //console.log("Adding edge:", edge);
             edge.arrows = 'to';
+            edge.label = edge.combined_rel_rela.join('\n');
             edgesDataset.add(edge);
         });
         // Zoom into the clicked node
-        var nodeIdToFocus = clickedNodeId;
+        var nodeIdToFocus = nodeId;
 
-// Get current viewport
-var currentView = network.getViewPosition();
-
-// Get the canvas (viewport) dimensions//var canvasWidth = document.getElementById('mynetwork').offsetWidth;
-var canvasHeight = document.getElementById('mynetwork').offsetHeight;
-
-// Calculate desired Y position for the node to be at the top center of the viewport.
+// Get the position of the node with nodeIdToFocus
 var nodePosition = network.getPositions([nodeIdToFocus])[nodeIdToFocus];
-var desiredX = nodePosition.x //- (nodePosition.x - currentView.x); // Align horizontally in the center
-var desiredY = nodePosition.y - (nodePosition.y + canvasHeight * 0.4); // Put the node 10% from the top
 
-// Use moveTo with the new position
+// Use moveTo with the node position to center the node in the viewport
 network.moveTo({
     position: {
-        x: desiredX,
-        y: desiredY
+        x: nodePosition.x,
+        y: nodePosition.y
     },
     scale: 1,
     animation: {
@@ -388,11 +448,66 @@ network.moveTo({
         easingFunction: "easeInOutQuad"
     }
 });
+
+// Find or create the container for the legend in your HTML
+let legendContainer = document.getElementById('network-legend-container');
+const myNetwork = document.getElementById('mynetwork'); // Get reference to the mynetwork element
+
+if (!legendContainer) {
+    legendContainer = document.createElement('div');
+    legendContainer.id = 'network-legend-container';
+    myNetwork.appendChild(legendContainer); // Append legendContainer to mynetwork instead of body
+}
+
+
+// Clear any previous legend entries
+
+const additionalLegendHTML = `
+    <div class="legend">
+        <div class="legend-item">
+            <svg width="20" height="20">
+                <circle cx="10" cy="10" r="8" fill="none" stroke="#000"></circle>
+            </svg>
+            <span> concepts extracted from text</span>
+        </div>
+        <div class="legend-item">
+            <svg width="20" height="20">
+                <polygon points="10,1 19,19 1,19" fill="none" stroke="#000"></polygon>
+            </svg>
+            <span> additional concepts from UMLS </span>
+        </div>
+    </div>
+    <p><strong>Semantic Types:</strong></p>`;
+
+// Clear any previous legend entries and append the additional legend items
+legendContainer.innerHTML = additionalLegendHTML;
+
+// Create and append legend entries for each displayed TUI
+displayedTUIs.forEach(tui => {
+    const color = TUI_color_mappings[tui];
+    const name = all_TUI_mappings[tui];
+
+    const legendEntry = document.createElement('div');
+    legendEntry.className = 'legend-entry';
+
+    const colorBox = document.createElement('div');
+    colorBox.className = 'color-box';
+    colorBox.style.backgroundColor = color;
+    legendEntry.appendChild(colorBox);
+
+    const nameLabel = document.createElement('span');
+    nameLabel.className = 'tui-name-label';
+    nameLabel.innerText = name;
+    legendEntry.appendChild(nameLabel);
+
+    legendContainer.appendChild(legendEntry);
+});
+
+
         hideLoader(); 
     }, 10);
 }
-lastClickedNode = clickedNodeId;
-});
+
 
 
 // remove traversal nodes if node id is not clickedNodeId defined in another click event
@@ -408,7 +523,7 @@ document.getElementById('removeTraversalNodes').addEventListener('change', funct
             // Identify nodes with source as 'traversal', excluding the clickedNodeId itself
             let traversalNodeIds = nodesDataset.get({
                 filter: function(node) {
-                    return node.source === 'traversal' && node.id !== clickedNodeId;
+                    return node.source === 'traversal';
                 }
             }).map(node => node.id);
 
