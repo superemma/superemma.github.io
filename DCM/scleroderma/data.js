@@ -1,4 +1,4 @@
-var project_name ='PWS';
+var project_name ='Scleroderma'
 var organColors = {
     'General Well-Being': '#D6C0F3',
     'ENT': '#4A1183',

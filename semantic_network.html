@@ -1,0 +1,944 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/css/tom-select.min.css" integrity="sha512-43fHB3GLgZfz8QXl1RPQ8O66oIgv3po9cJ5erMt1c4QISq9dYb195T3vr5ImnJPXuVroKcGBPXBFKETW8jrPNQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/tom-select/2.0.0-rc.4/js/tom-select.complete.js" integrity="sha512-jeF9CfnvzDiw9G9xiksVjxR2lib44Gnovvkv+3CgCG6NXCD4gqlA5nDAVW5WjpA+i+/zKsUWV5xNEbW1X/HH0Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 100%;
+                 height: 600px;
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+          <div id="checkboxes">Filter by relation</div>
+                <div id="select-menu" class="card-header">
+                    <div class="row no-gutters">
+                        <div class="col-10 pb-2">
+                            <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="selectNode([value]);"
+                            id="select-node"
+                            placeholder="Select node..."
+                            >
+                                <option selected>Select a Node by ID</option>
+                                
+                                    <option value="Organism">Organism</option>
+                                
+                                    <option value="Plant">Plant</option>
+                                
+                                    <option value="Fungus">Fungus</option>
+                                
+                                    <option value="Virus">Virus</option>
+                                
+                                    <option value="Bacterium">Bacterium</option>
+                                
+                                    <option value="Animal">Animal</option>
+                                
+                                    <option value="Vertebrate">Vertebrate</option>
+                                
+                                    <option value="Amphibian">Amphibian</option>
+                                
+                                    <option value="Bird">Bird</option>
+                                
+                                    <option value="Fish">Fish</option>
+                                
+                                    <option value="Reptile">Reptile</option>
+                                
+                                    <option value="Mammal">Mammal</option>
+                                
+                                    <option value="Human">Human</option>
+                                
+                                    <option value="Anatomical Structure">Anatomical Structure</option>
+                                
+                                    <option value="Embryonic Structure">Embryonic Structure</option>
+                                
+                                    <option value="Congenital Abnormality">Congenital Abnormality</option>
+                                
+                                    <option value="Acquired Abnormality">Acquired Abnormality</option>
+                                
+                                    <option value="Fully Formed Anatomical Structure">Fully Formed Anatomical Structure</option>
+                                
+                                    <option value="Body System">Body System</option>
+                                
+                                    <option value="Body Part, Organ, or Organ Component">Body Part, Organ, or Organ Component</option>
+                                
+                                    <option value="Tissue">Tissue</option>
+                                
+                                    <option value="Cell">Cell</option>
+                                
+                                    <option value="Cell Component">Cell Component</option>
+                                
+                                    <option value="Gene or Genome">Gene or Genome</option>
+                                
+                                    <option value="Body Location or Region">Body Location or Region</option>
+                                
+                                    <option value="Body Space or Junction">Body Space or Junction</option>
+                                
+                                    <option value="Body Substance">Body Substance</option>
+                                
+                                    <option value="Organism Attribute">Organism Attribute</option>
+                                
+                                    <option value="Finding">Finding</option>
+                                
+                                    <option value="Laboratory or Test Result">Laboratory or Test Result</option>
+                                
+                                    <option value="Injury or Poisoning">Injury or Poisoning</option>
+                                
+                                    <option value="Biologic Function">Biologic Function</option>
+                                
+                                    <option value="Physiologic Function">Physiologic Function</option>
+                                
+                                    <option value="Organism Function">Organism Function</option>
+                                
+                                    <option value="Mental Process">Mental Process</option>
+                                
+                                    <option value="Organ or Tissue Function">Organ or Tissue Function</option>
+                                
+                                    <option value="Cell Function">Cell Function</option>
+                                
+                                    <option value="Molecular Function">Molecular Function</option>
+                                
+                                    <option value="Genetic Function">Genetic Function</option>
+                                
+                                    <option value="Pathologic Function">Pathologic Function</option>
+                                
+                                    <option value="Disease or Syndrome">Disease or Syndrome</option>
+                                
+                                    <option value="Mental or Behavioral Dysfunction">Mental or Behavioral Dysfunction</option>
+                                
+                                    <option value="Cell or Molecular Dysfunction">Cell or Molecular Dysfunction</option>
+                                
+                                    <option value="Experimental Model of Disease">Experimental Model of Disease</option>
+                                
+                                    <option value="Event">Event</option>
+                                
+                                    <option value="Activity">Activity</option>
+                                
+                                    <option value="Behavior">Behavior</option>
+                                
+                                    <option value="Social Behavior">Social Behavior</option>
+                                
+                                    <option value="Individual Behavior">Individual Behavior</option>
+                                
+                                    <option value="Daily or Recreational Activity">Daily or Recreational Activity</option>
+                                
+                                    <option value="Occupational Activity">Occupational Activity</option>
+                                
+                                    <option value="Health Care Activity">Health Care Activity</option>
+                                
+                                    <option value="Laboratory Procedure">Laboratory Procedure</option>
+                                
+                                    <option value="Diagnostic Procedure">Diagnostic Procedure</option>
+                                
+                                    <option value="Therapeutic or Preventive Procedure">Therapeutic or Preventive Procedure</option>
+                                
+                                    <option value="Research Activity">Research Activity</option>
+                                
+                                    <option value="Molecular Biology Research Technique">Molecular Biology Research Technique</option>
+                                
+                                    <option value="Governmental or Regulatory Activity">Governmental or Regulatory Activity</option>
+                                
+                                    <option value="Educational Activity">Educational Activity</option>
+                                
+                                    <option value="Machine Activity">Machine Activity</option>
+                                
+                                    <option value="Phenomenon or Process">Phenomenon or Process</option>
+                                
+                                    <option value="Human-caused Phenomenon or Process">Human-caused Phenomenon or Process</option>
+                                
+                                    <option value="Environmental Effect of Humans">Environmental Effect of Humans</option>
+                                
+                                    <option value="Natural Phenomenon or Process">Natural Phenomenon or Process</option>
+                                
+                                    <option value="Entity">Entity</option>
+                                
+                                    <option value="Physical Object">Physical Object</option>
+                                
+                                    <option value="Manufactured Object">Manufactured Object</option>
+                                
+                                    <option value="Medical Device">Medical Device</option>
+                                
+                                    <option value="Research Device">Research Device</option>
+                                
+                                    <option value="Conceptual Entity">Conceptual Entity</option>
+                                
+                                    <option value="Idea or Concept">Idea or Concept</option>
+                                
+                                    <option value="Temporal Concept">Temporal Concept</option>
+                                
+                                    <option value="Qualitative Concept">Qualitative Concept</option>
+                                
+                                    <option value="Quantitative Concept">Quantitative Concept</option>
+                                
+                                    <option value="Spatial Concept">Spatial Concept</option>
+                                
+                                    <option value="Geographic Area">Geographic Area</option>
+                                
+                                    <option value="Molecular Sequence">Molecular Sequence</option>
+                                
+                                    <option value="Nucleotide Sequence">Nucleotide Sequence</option>
+                                
+                                    <option value="Amino Acid Sequence">Amino Acid Sequence</option>
+                                
+                                    <option value="Carbohydrate Sequence">Carbohydrate Sequence</option>
+                                
+                                    <option value="Regulation or Law">Regulation or Law</option>
+                                
+                                    <option value="Occupation or Discipline">Occupation or Discipline</option>
+                                
+                                    <option value="Biomedical Occupation or Discipline">Biomedical Occupation or Discipline</option>
+                                
+                                    <option value="Organization">Organization</option>
+                                
+                                    <option value="Health Care Related Organization">Health Care Related Organization</option>
+                                
+                                    <option value="Professional Society">Professional Society</option>
+                                
+                                    <option value="Self-help or Relief Organization">Self-help or Relief Organization</option>
+                                
+                                    <option value="Group">Group</option>
+                                
+                                    <option value="Professional or Occupational Group">Professional or Occupational Group</option>
+                                
+                                    <option value="Population Group">Population Group</option>
+                                
+                                    <option value="Family Group">Family Group</option>
+                                
+                                    <option value="Age Group">Age Group</option>
+                                
+                                    <option value="Patient or Disabled Group">Patient or Disabled Group</option>
+                                
+                                    <option value="Group Attribute">Group Attribute</option>
+                                
+                                    <option value="Chemical">Chemical</option>
+                                
+                                    <option value="Chemical Viewed Structurally">Chemical Viewed Structurally</option>
+                                
+                                    <option value="Organic Chemical">Organic Chemical</option>
+                                
+                                    <option value="Nucleic Acid, Nucleoside, or Nucleotide">Nucleic Acid, Nucleoside, or Nucleotide</option>
+                                
+                                    <option value="Amino Acid, Peptide, or Protein">Amino Acid, Peptide, or Protein</option>
+                                
+                                    <option value="Chemical Viewed Functionally">Chemical Viewed Functionally</option>
+                                
+                                    <option value="Pharmacologic Substance">Pharmacologic Substance</option>
+                                
+                                    <option value="Biomedical or Dental Material">Biomedical or Dental Material</option>
+                                
+                                    <option value="Biologically Active Substance">Biologically Active Substance</option>
+                                
+                                    <option value="Hormone">Hormone</option>
+                                
+                                    <option value="Enzyme">Enzyme</option>
+                                
+                                    <option value="Vitamin">Vitamin</option>
+                                
+                                    <option value="Immunologic Factor">Immunologic Factor</option>
+                                
+                                    <option value="Indicator, Reagent, or Diagnostic Aid">Indicator, Reagent, or Diagnostic Aid</option>
+                                
+                                    <option value="Hazardous or Poisonous Substance">Hazardous or Poisonous Substance</option>
+                                
+                                    <option value="Substance">Substance</option>
+                                
+                                    <option value="Food">Food</option>
+                                
+                                    <option value="Functional Concept">Functional Concept</option>
+                                
+                                    <option value="Intellectual Product">Intellectual Product</option>
+                                
+                                    <option value="Language">Language</option>
+                                
+                                    <option value="Sign or Symptom">Sign or Symptom</option>
+                                
+                                    <option value="Classification">Classification</option>
+                                
+                                    <option value="Anatomical Abnormality">Anatomical Abnormality</option>
+                                
+                                    <option value="Neoplastic Process">Neoplastic Process</option>
+                                
+                                    <option value="Receptor">Receptor</option>
+                                
+                                    <option value="Archaeon">Archaeon</option>
+                                
+                                    <option value="Antibiotic">Antibiotic</option>
+                                
+                                    <option value="Element, Ion, or Isotope">Element, Ion, or Isotope</option>
+                                
+                                    <option value="Inorganic Chemical">Inorganic Chemical</option>
+                                
+                                    <option value="Clinical Drug">Clinical Drug</option>
+                                
+                                    <option value="Clinical Attribute">Clinical Attribute</option>
+                                
+                                    <option value="Drug Delivery Device">Drug Delivery Device</option>
+                                
+                                    <option value="Eukaryote">Eukaryote</option>
+                                
+                            </select>
+                        </div>
+                        <div class="col-2 pb-2">
+                            <button type="button" class="btn btn-primary btn-block" onclick="neighbourhoodHighlight({nodes: []});">Reset Selection</button>
+                        </div>
+                    </div>
+                </div>
+            
+            
+              <div id="filter-menu" class="card-header">
+                <div class="row no-gutters">
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'item')"
+                            id="select-item"
+                        >
+                        <option value="">Select a network item</option>
+                        <option value="edge">edge</option>
+                        <option value="node">node</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            onchange="updateFilter(value, 'property')"
+                            id="select-property"
+                        >
+                        <option value="">Select a property...</option>
+                    </select>
+                  </div>
+                  <div class="col-3 pb-2">
+                    <select
+                            class="form-select"
+                            aria-label="Default select example"
+                            id="select-value"
+                        >
+                        <option value="">Select value(s)...</option>
+                    </select>
+                  </div>
+                  <div class="col-1 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="highlightFilter(filter);">Filter</button>
+                  </div>
+                  <div class="col-2 pb-2">
+                    <button type="button" class="btn btn-primary btn-block" onclick="clearFilter(true)">Reset Selection</button>
+                  </div>
+                </div>
+              </div>
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+                  new TomSelect("#select-node",{
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      }
+                  });
+              
+
+              
+                  // explicitly using onItemAdd and this function as we need to save multiple values
+                  let updateValueFilter = function() {
+                      return function () {
+                      filter['value'].push(arguments[0])
+                      }
+                  }
+
+                  let valueControl = new TomSelect("#select-value",{
+                      maxItems: null,
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: updateValueFilter()
+                  });
+
+                  let addValues = function() {
+                      return function () {
+                          // clear the current value options and add the selected attribute values
+                          // tom-select handles duplicates
+                          let selectedProperty = arguments[0];
+                          valueControl.clear();
+                          valueControl.clearOptions();
+                          filter['value'] = []
+                          if (filter['item'] === 'node') {
+                              for (let each in allNodes) {
+                                  valueControl.addOption({
+                                      id:allNodes[each][selectedProperty],
+                                      title:allNodes[each][selectedProperty]
+                                  })
+                              }
+                          }
+                          else if (filter['item'] === 'edge') {
+                              for (let each in allEdges) {
+                                  valueControl.addOption({
+                                      id:allEdges[each][selectedProperty],
+                                      title:allEdges[each][selectedProperty]
+                                  })
+                              }
+                          }
+                      }
+                  };
+
+                  let propControl = new TomSelect("#select-property",{
+                      valueField: 'id',
+                      labelField: 'title',
+                      searchField: 'title',
+                      create: false,
+                      sortField: {
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addValues()
+                  });
+
+                  let addProperties = function() {
+                      return function () {
+                          // loops through the selected network item and adds the attributes to dropdown
+                          // tom-select handles duplicates
+                          clearFilter(false)
+                          if (arguments[0] === 'edge') {
+                              for (let each in allEdges) {
+                                  if (allEdges.hasOwnProperty(each)) {
+                                      for (let eachProp in allEdges[each]) {
+                                          if (allEdges[each].hasOwnProperty(eachProp)) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                          else if (arguments[0] === 'node') {
+                              for (let each in allNodes) {
+                                  if (allNodes.hasOwnProperty(each)) {
+                                      for (let eachProp in allNodes[each]) {
+                                          if (allNodes[each].hasOwnProperty(eachProp)
+                                              && (eachProp !== 'hidden' && eachProp !== 'savedLabel'
+                                                  && eachProp !== 'hiddenLabel')) {
+                                              propControl.addOption({id: eachProp, title: eachProp})
+
+                                          }
+                                      }
+                                  }
+                              }
+                          }
+                      }
+                  };
+
+                  let itemControl = new TomSelect("#select-item",{
+                      create: false,
+                      sortField:{
+                          field: "text",
+                          direction: "asc"
+                      },
+                      onItemAdd: addProperties()
+                  });
+
+                  function clearFilter(reset) {
+                      // utility function to clear all the selected filter options
+                      // if reset is set to true, the existing filter will be removed
+                      // else, only the dropdown options are cleared
+                      propControl.clear();
+                      propControl.clearOptions();
+                      valueControl.clear();
+                      valueControl.clearOptions();
+                      filter = {
+                          item : '',
+                          property : '',
+                          value : []
+                      }
+                      if (reset) {
+                          itemControl.clear();
+                          filterHighlight({nodes: []})
+                      }
+                  }
+
+                  function updateFilter(value, key) {
+                      // key could be 'item' or 'property' and value is as selected in dropdown
+                      filter[key] = value
+                  }
+
+              
+                  // Global variables to hold all labels and the network instance
+var allEdgeLabels = [];
+
+                 
+// Function to extract unique labels from edges
+function extractUniqueLabels() {
+    var edgeArray = edges.get();
+    edgeArray.forEach(edge => {
+        if (!allEdgeLabels.includes(edge.label)) {
+            allEdgeLabels.push(edge.label);
+        }
+    });
+}
+
+// Function to generate checkboxes
+function generateCheckboxes() {
+    var container = document.getElementById('checkboxes');
+    allEdgeLabels.forEach(label => {
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = label;
+        checkbox.checked = true;
+        checkbox.onchange = updateNetwork;
+
+        var labelElement = document.createElement('label');
+        labelElement.htmlFor = label;
+        labelElement.appendChild(document.createTextNode(label));
+
+        container.appendChild(checkbox);
+        container.appendChild(labelElement);
+    });
+}
+
+// Function to update network based on checkbox state
+function updateNetwork() {
+    var updatedEdges = [];
+    edges.forEach(edge => {
+        var checkbox = document.getElementById(edge.label);
+        if (checkbox && checkbox.checked) {
+            updatedEdges.push(edge);
+        }
+    });
+    network.setData({ nodes: nodes, edges: new vis.DataSet(updatedEdges) });
+}
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+
+                  var container = document.getElementById('mynetwork');
+ nodes = new vis.DataSet([{'id': 'Activity', 'label': 'Activity', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'An operation or series of operations that an organism or machine carries out or participates in.', 'color': '#a588cf'}, {'id': 'Behavior', 'label': 'Behavior', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'Any of the psycho-social activities of humans or animals that can be observed directly by others or can be made systematically observable by the use of special strategies.', 'color': '#a588cf'}, {'id': 'Daily or Recreational Activity', 'label': 'Daily or Recreational Activity', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'An activity carried out for recreation or exercise, or as part of daily life.', 'color': '#a588cf'}, {'id': 'Event', 'label': 'Event', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'A broad type for grouping activities, processes and states.', 'color': '#a588cf'}, {'id': 'Governmental or Regulatory Activity', 'label': 'Governmental or Regulatory Activity', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'An activity carried out by officially constituted governments, or an activity related to the creation or enforcement of the rules or regulations governing some field of endeavor.', 'color': '#a588cf'}, {'id': 'Individual Behavior', 'label': 'Individual Behavior', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'Behavior exhibited by a human or an animal that is not a direct result of interaction with other members of the species, but which may have an effect on others.', 'color': '#a588cf'}, {'id': 'Machine Activity', 'label': 'Machine Activity', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'An activity carried out primarily or exclusively by machines.', 'color': '#a588cf'}, {'id': 'Occupational Activity', 'label': 'Occupational Activity', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'An activity carried out as part of an occupation or job.', 'color': '#a588cf'}, {'id': 'Social Behavior', 'label': 'Social Behavior', 'Group': 'Activities & Behaviors', 'shape': 'dot', 'title': 'Behavior that is a direct result or function of the interaction of humans or animals with their fellows. This includes behavior that may be considered anti-social.', 'color': '#a588cf'}, {'id': 'Anatomical Structure', 'label': 'Anatomical Structure', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'A normal or pathological part of the anatomy or structural organization of an organism.', 'color': '#f80101'}, {'id': 'Body Location or Region', 'label': 'Body Location or Region', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'An area, subdivision, or region of the body demarcated for the purpose of topographical description.', 'color': '#f80101'}, {'id': 'Body Part, Organ, or Organ Component', 'label': 'Body Part, Organ, or Organ Component', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'A collection of cells and tissues which are localized to a specific area or combine and carry out one or more specialized functions of an organism. This ranges from gross structures to small components of complex organs. These structures are relatively localized in comparison to tissues.', 'color': '#f80101'}, {'id': 'Body Space or Junction', 'label': 'Body Space or Junction', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'An area enclosed or surrounded by body parts or organs or the place where two anatomical structures meet or connect.', 'color': '#f80101'}, {'id': 'Body Substance', 'label': 'Body Substance', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'Extracellular material, or mixtures of cells and extracellular material, produced, excreted, or accreted by the body. Included here are substances such as saliva, dental enamel, sweat, and gastric acid.', 'color': '#f80101'}, {'id': 'Body System', 'label': 'Body System', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'A complex of anatomical structures that performs a common function.', 'color': '#f80101'}, {'id': 'Cell', 'label': 'Cell', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'The fundamental structural and functional unit of living organisms.', 'color': '#f80101'}, {'id': 'Cell Component', 'label': 'Cell Component', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'A part of a cell or the intercellular matrix, generally visible by light microscopy.', 'color': '#f80101'}, {'id': 'Embryonic Structure', 'label': 'Embryonic Structure', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'An anatomical structure that exists only before the organism is fully formed; in mammals, for example, a structure that exists only prior to the birth of the organism. This structure may be normal or abnormal.', 'color': '#f80101'}, {'id': 'Fully Formed Anatomical Structure', 'label': 'Fully Formed Anatomical Structure', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'An anatomical structure in a fully formed organism; in mammals, for example, a structure in the body after the birth of the organism.', 'color': '#f80101'}, {'id': 'Tissue', 'label': 'Tissue', 'Group': 'Anatomy', 'shape': 'dot', 'title': 'An aggregation of similarly specialized cells and the associated intercellular substance. Tissues are relatively non-localized in comparison to body parts, organs or organ components.', 'color': '#f80101'}, {'id': 'Amino Acid, Peptide, or Protein', 'label': 'Amino Acid, Peptide, or Protein', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'Amino acids and chains of amino acids connected by peptide linkages.', 'color': '#63e625'}, {'id': 'Antibiotic', 'label': 'Antibiotic', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A pharmacologically active compound produced by growing microorganisms which kill or inhibit growth of other microorganisms.', 'color': '#63e625'}, {'id': 'Biologically Active Substance', 'label': 'Biologically Active Substance', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A generally endogenous substance produced or required by an organism, of primary interest because of its role in the biologic functioning of the organism that produces it.', 'color': '#63e625'}, {'id': 'Biomedical or Dental Material', 'label': 'Biomedical or Dental Material', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A substance used in biomedicine or dentistry predominantly for its physical, as opposed to chemical, properties. Included here are biocompatible materials, tissue adhesives, bone cements, resins, toothpastes, etc.', 'color': '#63e625'}, {'id': 'Chemical', 'label': 'Chemical', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'Compounds or substances of definite molecular composition. Chemicals are viewed from two distinct perspectives in the network, functionally and structurally. Almost every chemical concept is assigned at least two types, generally one from the structure hierarchy and at least one from the function hierarchy.', 'color': '#63e625'}, {'id': 'Chemical Viewed Functionally', 'label': 'Chemical Viewed Functionally', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A chemical viewed from the perspective of its functional characteristics or pharmacological activities.', 'color': '#63e625'}, {'id': 'Chemical Viewed Structurally', 'label': 'Chemical Viewed Structurally', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A chemical or chemicals viewed from the perspective of their structural characteristics. Included here are concepts which can mean either a salt, an ion, or a compound (e.g., "Bromates" and "Bromides").', 'color': '#63e625'}, {'id': 'Clinical Drug', 'label': 'Clinical Drug', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A pharmaceutical preparation as produced by the manufacturer. The name usually includes the substance, its strength, and the form, but may include the substance and only one of the other two items.', 'color': '#63e625'}, {'id': 'Element, Ion, or Isotope', 'label': 'Element, Ion, or Isotope', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': "One of the 109 presently known fundamental substances that comprise all matter at and above the atomic level. This includes elemental metals, rare gases, and most abundant naturally occurring radioactive elements, as well as the ionic counterparts of elements (NA+, Cl-), and the less abundant isotopic forms. This does not include organic ions such as iodoacetate to which the type 'Organic Chemical' is assigned.", 'color': '#63e625'}, {'id': 'Enzyme', 'label': 'Enzyme', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A complex chemical, usually a protein, that is produced by living cells and which catalyzes specific biochemical reactions. There are six main types of enzymes: oxidoreductases, transferases, hydrolases, lyases, isomerases, and ligases.', 'color': '#63e625'}, {'id': 'Hazardous or Poisonous Substance', 'label': 'Hazardous or Poisonous Substance', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A substance of concern because of its potentially hazardous or toxic effects. This would include most drugs of abuse, as well as agents that require special handling because of their toxicity.', 'color': '#63e625'}, {'id': 'Hormone', 'label': 'Hormone', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'In animals, a chemical usually secreted by an endocrine gland whose products are released into the circulating fluid. Hormones act as chemical messengers and regulate various physiologic processes such as growth, reproduction, metabolism, etc. They usually fall into two broad classes, steroid hormones and peptide hormones.', 'color': '#63e625'}, {'id': 'Immunologic Factor', 'label': 'Immunologic Factor', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A biologically active substance whose activities affect or play a role in the functioning of the immune system.', 'color': '#63e625'}, {'id': 'Indicator, Reagent, or Diagnostic Aid', 'label': 'Indicator, Reagent, or Diagnostic Aid', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A substance primarily of interest for its use in laboratory or diagnostic tests and procedures to detect, measure, examine, or analyze other chemicals, processes, or conditions.', 'color': '#63e625'}, {'id': 'Inorganic Chemical', 'label': 'Inorganic Chemical', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'Chemical elements and their compounds, excluding the hydrocarbons and their derivatives (except carbides, carbonates, cyanides, cyanates and carbon disulfide). Generally inorganic compounds contain ionic bonds. Included here are inorganic acids and salts, alloys, alkalies, and minerals.', 'color': '#63e625'}, {'id': 'Nucleic Acid, Nucleoside, or Nucleotide', 'label': 'Nucleic Acid, Nucleoside, or Nucleotide', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': "A complex compound of high molecular weight occurring in living cells. These are basically of two types, ribonucleic (RNA) and deoxyribonucleic (DNA) acids. Nucleic acids are made of nucleotides (nitrogen-containing base, a 5-carbon sugar, and one or more phosphate group) linked together by a phosphodiester bond between the 5' and 3' carbon atoms. Nucleosides are compounds composed of a purine or pyrimidine base (usually adenine, cytosine, guanine, thymine, uracil) linked to either a ribose or a deoxyribose sugar.", 'color': '#63e625'}, {'id': 'Organic Chemical', 'label': 'Organic Chemical', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'The general class of carbon-containing compounds, usually based on carbon chains or rings, and also containing hydrogen (hydrocarbons), with or without nitrogen, oxygen, or other elements in which the bonding between elements is generally covalent.', 'color': '#63e625'}, {'id': 'Pharmacologic Substance', 'label': 'Pharmacologic Substance', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A substance used in the treatment or prevention of pathologic disorders. This includes substances that occur naturally in the body and are administered therapeutically.', 'color': '#63e625'}, {'id': 'Receptor', 'label': 'Receptor', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A specific structure or site on the cell surface or within its cytoplasm that recognizes and binds with other specific molecules. These include the proteins on the surface of an immunocompetent cell that binds with antigens, or proteins found on the surface molecules that bind with hormones or neurotransmitters and react with other molecules that respond in a specific way.', 'color': '#63e625'}, {'id': 'Vitamin', 'label': 'Vitamin', 'Group': 'Chemicals & Drugs', 'shape': 'dot', 'title': 'A substance, usually an organic chemical complex, present in natural products or made synthetically, which is essential in the diet of man or other higher animals. Included here are vitamin precursors, provitamins, and vitamin supplements.', 'color': '#63e625'}, {'id': 'Classification', 'label': 'Classification', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A term or system of terms denoting an arrangement by class or category.', 'color': '#0f5bd9'}, {'id': 'Conceptual Entity', 'label': 'Conceptual Entity', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A broad type for grouping abstract entities or concepts.', 'color': '#0f5bd9'}, {'id': 'Functional Concept', 'label': 'Functional Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A concept which is of interest because it pertains to the carrying out of a process or activity.', 'color': '#0f5bd9'}, {'id': 'Group Attribute', 'label': 'Group Attribute', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A conceptual entity which refers to the frequency or distribution of certain characteristics or phenomena in certain groups.', 'color': '#0f5bd9'}, {'id': 'Idea or Concept', 'label': 'Idea or Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'An abstract concept, such as a social, religious or philosophical concept.', 'color': '#0f5bd9'}, {'id': 'Intellectual Product', 'label': 'Intellectual Product', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A conceptual entity resulting from human endeavor. Concepts assigned to this type generally refer to information created by humans for some purpose.', 'color': '#0f5bd9'}, {'id': 'Language', 'label': 'Language', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'The system of communication used by a particular nation or people.', 'color': '#0f5bd9'}, {'id': 'Qualitative Concept', 'label': 'Qualitative Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A concept which is an assessment of some quality, rather than a direct measurement.', 'color': '#0f5bd9'}, {'id': 'Quantitative Concept', 'label': 'Quantitative Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A concept which involves the dimensions, quantity or capacity of something using some unit of measure, or which involves the quantitative comparison of entities.', 'color': '#0f5bd9'}, {'id': 'Regulation or Law', 'label': 'Regulation or Law', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'An intellectual product resulting from legislative or regulatory activity.', 'color': '#0f5bd9'}, {'id': 'Spatial Concept', 'label': 'Spatial Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A location, region, or space, generally having definite boundaries.', 'color': '#0f5bd9'}, {'id': 'Temporal Concept', 'label': 'Temporal Concept', 'Group': 'Concepts & Ideas', 'shape': 'dot', 'title': 'A concept which pertains to time or duration.', 'color': '#0f5bd9'}, {'id': 'Drug Delivery Device', 'label': 'Drug Delivery Device', 'Group': 'Devices', 'shape': 'dot', 'title': 'A medical device that contains a clinical drug or drugs.', 'color': '#e20d40'}, {'id': 'Medical Device', 'label': 'Medical Device', 'Group': 'Devices', 'shape': 'dot', 'title': 'A manufactured object used primarily in the diagnosis, treatment, or prevention of physiologic or anatomic disorders.', 'color': '#e20d40'}, {'id': 'Research Device', 'label': 'Research Device', 'Group': 'Devices', 'shape': 'dot', 'title': 'A manufactured object used primarily in carrying out scientific research or experimentation.', 'color': '#e20d40'}, {'id': 'Acquired Abnormality', 'label': 'Acquired Abnormality', 'Group': 'Disorders', 'shape': 'dot', 'title': 'An abnormal structure, or one that is abnormal in size or location, found in or deriving from a previously normal structure. Acquired abnormalities are distinguished from diseases even though they may result in pathological functioning (e.g., "hernias incarcerate").', 'color': '#d5ccaf'}, {'id': 'Anatomical Abnormality', 'label': 'Anatomical Abnormality', 'Group': 'Disorders', 'shape': 'dot', 'title': 'An abnormal structure, or one that is abnormal in size or location.', 'color': '#d5ccaf'}, {'id': 'Cell or Molecular Dysfunction', 'label': 'Cell or Molecular Dysfunction', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A pathologic function inherent to cells, parts of cells, or molecules.', 'color': '#d5ccaf'}, {'id': 'Congenital Abnormality', 'label': 'Congenital Abnormality', 'Group': 'Disorders', 'shape': 'dot', 'title': 'An abnormal structure, or one that is abnormal in size or location, present at birth or evolving over time as a result of a defect in embryogenesis.', 'color': '#d5ccaf'}, {'id': 'Disease or Syndrome', 'label': 'Disease or Syndrome', 'Group': 'Disorders', 'shape': 'dot', 'title': "A condition which alters or interferes with a normal process, state, or activity of an organism. It is usually characterized by the abnormal functioning of one or more of the host's systems, parts, or organs. Included here is a complex of symptoms descriptive of a disorder.", 'color': '#d5ccaf'}, {'id': 'Experimental Model of Disease', 'label': 'Experimental Model of Disease', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A representation in a non-human organism of a human disease for the purpose of research into its mechanism or treatment.', 'color': '#d5ccaf'}, {'id': 'Finding', 'label': 'Finding', 'Group': 'Disorders', 'shape': 'dot', 'title': "That which is discovered by direct observation or measurement of an organism attribute or condition, including the clinical history of the patient. The history of the presence of a disease is a 'Finding' and is distinguished from the disease itself.", 'color': '#d5ccaf'}, {'id': 'Injury or Poisoning', 'label': 'Injury or Poisoning', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A traumatic wound, injury, or poisoning caused by an external agent or force.', 'color': '#d5ccaf'}, {'id': 'Mental or Behavioral Dysfunction', 'label': 'Mental or Behavioral Dysfunction', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A clinically significant dysfunction whose major manifestation is behavioral or psychological. These dysfunctions may have identified or presumed biological etiologies or manifestations.', 'color': '#d5ccaf'}, {'id': 'Neoplastic Process', 'label': 'Neoplastic Process', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A new and abnormal growth of tissue in which the growth is uncontrolled and progressive. The growths may be malignant or benign.', 'color': '#d5ccaf'}, {'id': 'Pathologic Function', 'label': 'Pathologic Function', 'Group': 'Disorders', 'shape': 'dot', 'title': 'A disordered process, activity, or state of the organism as a whole, of a body system or systems, or of multiple organs or tissues. Included here are normal responses to a negative stimulus as well as patholologic conditions or states that are less specific than a disease. Pathologic functions frequently have systemic effects.', 'color': '#d5ccaf'}, {'id': 'Sign or Symptom', 'label': 'Sign or Symptom', 'Group': 'Disorders', 'shape': 'dot', 'title': 'An observable manifestation of a disease or condition based on clinical judgment, or a manifestation of a disease or condition which is experienced by the patient and reported as a subjective observation.', 'color': '#d5ccaf'}, {'id': 'Amino Acid Sequence', 'label': 'Amino Acid Sequence', 'Group': 'Genes & Molecular Sequences', 'shape': 'dot', 'title': 'The sequence of amino acids as arrayed in chains, sheets, etc., within the protein molecule. It is of fundamental importance in determining protein structure.', 'color': '#21edcb'}, {'id': 'Carbohydrate Sequence', 'label': 'Carbohydrate Sequence', 'Group': 'Genes & Molecular Sequences', 'shape': 'dot', 'title': 'The sequence of carbohydrates within polysaccharides, glycoproteins, and glycolipids.', 'color': '#21edcb'}, {'id': 'Gene or Genome', 'label': 'Gene or Genome', 'Group': 'Genes & Molecular Sequences', 'shape': 'dot', 'title': 'A specific sequence, or in the case of the genome the complete sequence, of nucleotides along a molecule of DNA or RNA (in the case of some viruses) which represent the functional units of heredity.', 'color': '#21edcb'}, {'id': 'Molecular Sequence', 'label': 'Molecular Sequence', 'Group': 'Genes & Molecular Sequences', 'shape': 'dot', 'title': 'A broad type for grouping the collected sequences of amino acids, carbohydrates, and nucleotide sequences. Descriptions of these sequences are generally reported in the published literature and/or are deposited in and maintained by databanks such as GenBank, European Molecular Biology Laboratory (EMBL), National Biomedical Research Foundation (NBRF), or other sequence repositories.', 'color': '#21edcb'}, {'id': 'Nucleotide Sequence', 'label': 'Nucleotide Sequence', 'Group': 'Genes & Molecular Sequences', 'shape': 'dot', 'title': 'The sequence of purines and pyrimidines in nucleic acids and polynucleotides. Included here are nucleotide-rich regions, conserved sequence, and DNA transforming region.', 'color': '#21edcb'}, {'id': 'Geographic Area', 'label': 'Geographic Area', 'Group': 'Geographic Areas', 'shape': 'dot', 'title': 'A geographic location, generally having definite boundaries.', 'color': '#898e04'}, {'id': 'Age Group', 'label': 'Age Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An individual or individuals classified according to their age.', 'color': '#e24c3f'}, {'id': 'Amphibian', 'label': 'Amphibian', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A cold-blooded, smooth-skinned vertebrate which characteristically hatches as an aquatic larva, breathing by gills. When mature, the amphibian breathes with lungs.', 'color': '#e24c3f'}, {'id': 'Animal', 'label': 'Animal', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An organism with eukaryotic cells, and lacking stiff cell walls, plastids and photosynthetic pigments.', 'color': '#e24c3f'}, {'id': 'Archaeon', 'label': 'Archaeon', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A member of one of the three domains of life, formerly called Archaebacteria under the taxon Bacteria, but now considered separate and distinct. Archaea are characterized by: 1) the presence of characteristic tRNAs and ribosomal RNAs; 2) the absence of peptidoglycan cell walls; 3) the presence of ether-linked lipids built from branched-chain subunits; and 4) their occurrence in unusual habitats. While archaea resemble bacteria in morphology and genomic organization, they resemble eukarya in their method of genomic replication.', 'color': '#e24c3f'}, {'id': 'Bacterium', 'label': 'Bacterium', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A small, typically one-celled, prokaryotic micro-organism.', 'color': '#e24c3f'}, {'id': 'Bird', 'label': 'Bird', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A vertebrate having a constant body temperature and characterized by the presence of feathers.', 'color': '#e24c3f'}, {'id': 'Eukaryote', 'label': 'Eukaryote', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'One of the three domains of life (the others being Bacteria and Archaea), also called Eukarya. These are organisms whose cells are enclosed in membranes and possess a nucleus. They comprise almost all multicellular and many unicellular organisms, and are traditionally divided into groups (sometimes called kingdoms) including Animals, Plants, Fungi, various Algae, and other taxa that were previously part of the old kingdom Protista.', 'color': '#e24c3f'}, {'id': 'Family Group', 'label': 'Family Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An individual or individuals classified according to their family relationships or relative position in the family unit.', 'color': '#e24c3f'}, {'id': 'Fish', 'label': 'Fish', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A cold-blooded aquatic vertebrate characterized by fins and breathing by gills. Included here are fishes having either a bony skeleton, such as a perch, or a cartilaginous skeleton, such as a shark, or those lacking a jaw, such as a lamprey or hagfish.', 'color': '#e24c3f'}, {'id': 'Fungus', 'label': 'Fungus', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A eukaryotic organism characterized by the absence of chlorophyll and the presence of a rigid cell wall. Included here are both slime molds and true fungi such as yeasts, molds, mildews, and mushrooms.', 'color': '#e24c3f'}, {'id': 'Group', 'label': 'Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A conceptual entity referring to the classification of individuals according to certain shared characteristics.', 'color': '#e24c3f'}, {'id': 'Human', 'label': 'Human', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'Modern man, the only remaining species of the Homo genus.', 'color': '#e24c3f'}, {'id': 'Mammal', 'label': 'Mammal', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A vertebrate having a constant body temperature and characterized by the presence of hair, mammary glands and sweat glands.', 'color': '#e24c3f'}, {'id': 'Organism', 'label': 'Organism', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'Generally, a living individual, including all plants and animals.', 'color': '#e24c3f'}, {'id': 'Patient or Disabled Group', 'label': 'Patient or Disabled Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An individual or individuals classified according to a disability, disease, condition or treatment.', 'color': '#e24c3f'}, {'id': 'Plant', 'label': 'Plant', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An organism having cellulose cell walls, growing by synthesis of inorganic substances, generally distinguished by the presence of chlorophyll, and lacking the power of locomotion. Plant parts are included here as well.', 'color': '#e24c3f'}, {'id': 'Population Group', 'label': 'Population Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An indivdual or individuals classified according to their sex, racial origin, religion, common place of living, financial or social status, or some other cultural or behavioral attribute.', 'color': '#e24c3f'}, {'id': 'Professional or Occupational Group', 'label': 'Professional or Occupational Group', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An individual or individuals classified according to their vocation.', 'color': '#e24c3f'}, {'id': 'Reptile', 'label': 'Reptile', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'A cold-blooded vertebrate having an external covering of scales or horny plates. Reptiles breathe by means of lungs and are generally egg-laying.', 'color': '#e24c3f'}, {'id': 'Vertebrate', 'label': 'Vertebrate', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An animal which has a spinal column.', 'color': '#e24c3f'}, {'id': 'Virus', 'label': 'Virus', 'Group': 'Living Beings', 'shape': 'dot', 'title': 'An organism consisting of a core of a single nucleic acid enclosed in a protective coat of protein. A virus may replicate only inside a host living cell. A virus exhibits some but not all of the usual characteristics of living things.', 'color': '#e24c3f'}, {'id': 'Entity', 'label': 'Entity', 'Group': 'Objects', 'shape': 'dot', 'title': 'A broad type for grouping physical and conceptual entities.', 'color': '#bb5984'}, {'id': 'Food', 'label': 'Food', 'Group': 'Objects', 'shape': 'dot', 'title': 'Any substance generally containing nutrients, such as carbohydrates, proteins, and fats, that can be ingested by a living organism and metabolized into energy and body tissue. Some foods are naturally occurring, others are either partially or entirely made by humans.', 'color': '#bb5984'}, {'id': 'Manufactured Object', 'label': 'Manufactured Object', 'Group': 'Objects', 'shape': 'dot', 'title': 'A physical object made by human beings.', 'color': '#bb5984'}, {'id': 'Physical Object', 'label': 'Physical Object', 'Group': 'Objects', 'shape': 'dot', 'title': 'An object perceptible to the sense of vision or touch.', 'color': '#bb5984'}, {'id': 'Substance', 'label': 'Substance', 'Group': 'Objects', 'shape': 'dot', 'title': 'A material with definite or fairly definite chemical composition.', 'color': '#bb5984'}, {'id': 'Biomedical Occupation or Discipline', 'label': 'Biomedical Occupation or Discipline', 'Group': 'Occupations', 'shape': 'dot', 'title': 'A vocation, academic discipline, or field of study related to biomedicine.', 'color': '#fad995'}, {'id': 'Occupation or Discipline', 'label': 'Occupation or Discipline', 'Group': 'Occupations', 'shape': 'dot', 'title': 'A vocation, academic discipline, or field of study, or a subpart of an occupation or discipline.', 'color': '#fad995'}, {'id': 'Health Care Related Organization', 'label': 'Health Care Related Organization', 'Group': 'Organizations', 'shape': 'dot', 'title': 'An established organization which carries out specific functions related to health care delivery or research in the life sciences.', 'color': '#4a62b8'}, {'id': 'Organization', 'label': 'Organization', 'Group': 'Organizations', 'shape': 'dot', 'title': 'The result of uniting for a common purpose or function. The continued existence of an organization is not dependent on any of its members, its location, or particular facility. Components or subparts of organizations are also included here. Although the names of organizations are sometimes used to refer to the buildings in which they reside, they are not inherently physical in nature.', 'color': '#4a62b8'}, {'id': 'Professional Society', 'label': 'Professional Society', 'Group': 'Organizations', 'shape': 'dot', 'title': 'An organization uniting those who have a common vocation or who are involved with a common field of study.', 'color': '#4a62b8'}, {'id': 'Self-help or Relief Organization', 'label': 'Self-help or Relief Organization', 'Group': 'Organizations', 'shape': 'dot', 'title': 'An organization whose purpose and function is to provide assistance to the needy or to offer support to those sharing similar problems.', 'color': '#4a62b8'}, {'id': 'Biologic Function', 'label': 'Biologic Function', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'A state, activity or process of the body or one of its systems or parts.', 'color': '#8991ec'}, {'id': 'Environmental Effect of Humans', 'label': 'Environmental Effect of Humans', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'A change in the natural environment that is a result of the activities of human beings.', 'color': '#8991ec'}, {'id': 'Human-caused Phenomenon or Process', 'label': 'Human-caused Phenomenon or Process', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'A phenomenon or process that is a result of the activities of human beings.', 'color': '#8991ec'}, {'id': 'Laboratory or Test Result', 'label': 'Laboratory or Test Result', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'The outcome of a specific test to measure an attribute or to determine the presence, absence, or degree of a condition.', 'color': '#8991ec'}, {'id': 'Natural Phenomenon or Process', 'label': 'Natural Phenomenon or Process', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'A phenomenon or process that occurs irrespective of the activities of human beings.', 'color': '#8991ec'}, {'id': 'Phenomenon or Process', 'label': 'Phenomenon or Process', 'Group': 'Phenomena', 'shape': 'dot', 'title': 'A process or state which occurs naturally or as a result of an activity.', 'color': '#8991ec'}, {'id': 'Cell Function', 'label': 'Cell Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A physiologic function inherent to cells or cell components.', 'color': '#775d7d'}, {'id': 'Clinical Attribute', 'label': 'Clinical Attribute', 'Group': 'Physiology', 'shape': 'dot', 'title': 'An observable or measurable property or state of an organism of clinical interest.', 'color': '#775d7d'}, {'id': 'Genetic Function', 'label': 'Genetic Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'Functions of or related to the maintenance, translation or expression of the genetic material.', 'color': '#775d7d'}, {'id': 'Mental Process', 'label': 'Mental Process', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A physiologic function involving the mind or cognitive processing.', 'color': '#775d7d'}, {'id': 'Molecular Function', 'label': 'Molecular Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A physiologic function occurring at the molecular level.', 'color': '#775d7d'}, {'id': 'Organism Attribute', 'label': 'Organism Attribute', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A property of the organism or its major parts.', 'color': '#775d7d'}, {'id': 'Organism Function', 'label': 'Organism Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A physiologic function of the organism as a whole, of multiple organ systems, or of multiple organs or tissues.', 'color': '#775d7d'}, {'id': 'Organ or Tissue Function', 'label': 'Organ or Tissue Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A physiologic function of a particular organ, organ system, or tissue.', 'color': '#775d7d'}, {'id': 'Physiologic Function', 'label': 'Physiologic Function', 'Group': 'Physiology', 'shape': 'dot', 'title': 'A normal process, activity, or state of the body.', 'color': '#775d7d'}, {'id': 'Diagnostic Procedure', 'label': 'Diagnostic Procedure', 'Group': 'Procedures', 'shape': 'dot', 'title': 'A procedure, method, or technique used to determine the nature or identity of a disease or disorder. This excludes procedures which are primarily carried out on specimens in a laboratory.', 'color': '#5313c8'}, {'id': 'Educational Activity', 'label': 'Educational Activity', 'Group': 'Procedures', 'shape': 'dot', 'title': 'An activity related to the organization and provision of education.', 'color': '#5313c8'}, {'id': 'Health Care Activity', 'label': 'Health Care Activity', 'Group': 'Procedures', 'shape': 'dot', 'title': 'An activity of or relating to the practice of medicine or involving the care of patients.', 'color': '#5313c8'}, {'id': 'Laboratory Procedure', 'label': 'Laboratory Procedure', 'Group': 'Procedures', 'shape': 'dot', 'title': 'A procedure, method, or technique used to determine the composition, quantity, or concentration of a specimen, and which is carried out in a clinical laboratory. Included here are procedures which measure the times and rates of reactions.', 'color': '#5313c8'}, {'id': 'Molecular Biology Research Technique', 'label': 'Molecular Biology Research Technique', 'Group': 'Procedures', 'shape': 'dot', 'title': 'Any of the techniques used in the study of or the directed modification of the gene complement of a living organism.', 'color': '#5313c8'}, {'id': 'Research Activity', 'label': 'Research Activity', 'Group': 'Procedures', 'shape': 'dot', 'title': 'An activity carried out as part of research or experimentation.', 'color': '#5313c8'}, {'id': 'Therapeutic or Preventive Procedure', 'label': 'Therapeutic or Preventive Procedure', 'Group': 'Procedures', 'shape': 'dot', 'title': 'A procedure, method, or technique designed to prevent a disease or a disorder, or to improve physical function, or used in the process of treating a disease or injury.', 'color': '#5313c8'}]);
+                  
+                  
+                  
+                  
+                  edges = new vis.DataSet([{'from': 'Acquired Abnormality', 'label': 'co-occurs_with', 'to': 'Injury or Poisoning', 'color': '#a0cae5'}, {'from': 'Acquired Abnormality', 'label': 'isa', 'to': 'Anatomical Abnormality', 'color': '#c12050'}, {'from': 'Acquired Abnormality', 'label': 'result_of', 'to': 'Behavior', 'color': '#a45002'}, {'from': 'Activity', 'label': 'isa', 'to': 'Event', 'color': '#c12050'}, {'from': 'Age Group', 'label': 'isa', 'to': 'Group', 'color': '#c12050'}, {'from': 'Amino Acid Sequence', 'label': 'isa', 'to': 'Molecular Sequence', 'color': '#c12050'}, {'from': 'Amino Acid Sequence', 'label': 'property_of', 'to': 'Amino Acid, Peptide, or Protein', 'color': '#0d978c'}, {'from': 'Amino Acid Sequence', 'label': 'property_of', 'to': 'Gene or Genome', 'color': '#0d978c'}, {'from': 'Amino Acid, Peptide, or Protein', 'label': 'consists_of', 'to': 'Amino Acid, Peptide, or Protein', 'color': '#bd999b'}, {'from': 'Amino Acid, Peptide, or Protein', 'label': 'isa', 'to': 'Organic Chemical', 'color': '#c12050'}, {'from': 'Amphibian', 'label': 'isa', 'to': 'Vertebrate', 'color': '#c12050'}, {'from': 'Anatomical Abnormality', 'label': 'affects', 'to': 'Organism', 'color': '#d116f2'}, {'from': 'Anatomical Abnormality', 'label': 'affects', 'to': 'Physiologic Function', 'color': '#d116f2'}, {'from': 'Anatomical Abnormality', 'label': 'associated_with', 'to': 'Organism Attribute', 'color': '#9f5470'}, {'from': 'Anatomical Abnormality', 'label': 'co-occurs_with', 'to': 'Anatomical Abnormality', 'color': '#a0cae5'}, {'from': 'Anatomical Abnormality', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Anatomical Abnormality', 'label': 'isa', 'to': 'Anatomical Structure', 'color': '#c12050'}, {'from': 'Anatomical Abnormality', 'label': 'location_of', 'to': 'Pathologic Function', 'color': '#d82e0d'}, {'from': 'Anatomical Abnormality', 'label': 'manifestation_of', 'to': 'Biologic Function', 'color': '#c6e1c3'}, {'from': 'Anatomical Abnormality', 'label': 'occurs_in', 'to': 'Group', 'color': '#3f75d5'}, {'from': 'Anatomical Abnormality', 'label': 'result_of', 'to': 'Anatomical Abnormality', 'color': '#a45002'}, {'from': 'Anatomical Abnormality', 'label': 'result_of', 'to': 'Health Care Activity', 'color': '#a45002'}, {'from': 'Anatomical Abnormality', 'label': 'result_of', 'to': 'Phenomenon or Process', 'color': '#a45002'}, {'from': 'Anatomical Structure', 'label': 'isa', 'to': 'Physical Object', 'color': '#c12050'}, {'from': 'Anatomical Structure', 'label': 'location_of', 'to': 'Bacterium', 'color': '#d82e0d'}, {'from': 'Anatomical Structure', 'label': 'location_of', 'to': 'Fungus', 'color': '#d82e0d'}, {'from': 'Anatomical Structure', 'label': 'location_of', 'to': 'Virus', 'color': '#d82e0d'}, {'from': 'Anatomical Structure', 'label': 'part_of', 'to': 'Organism', 'color': '#613424'}, {'from': 'Animal', 'label': 'exhibits', 'to': 'Behavior', 'color': '#9a2d13'}, {'from': 'Animal', 'label': 'isa', 'to': 'Eukaryote', 'color': '#c12050'}, {'from': 'Antibiotic', 'label': 'isa', 'to': 'Pharmacologic Substance', 'color': '#c12050'}, {'from': 'Archaeon', 'label': 'isa', 'to': 'Organism', 'color': '#c12050'}, {'from': 'Bacterium', 'label': 'causes', 'to': 'Pathologic Function', 'color': '#863fc9'}, {'from': 'Bacterium', 'label': 'isa', 'to': 'Organism', 'color': '#c12050'}, {'from': 'Bacterium', 'label': 'location_of', 'to': 'Biologically Active Substance', 'color': '#d82e0d'}, {'from': 'Behavior', 'label': 'affects', 'to': 'Behavior', 'color': '#d116f2'}, {'from': 'Behavior', 'label': 'affects', 'to': 'Mental Process', 'color': '#d116f2'}, {'from': 'Behavior', 'label': 'associated_with', 'to': 'Geographic Area', 'color': '#9f5470'}, {'from': 'Behavior', 'label': 'associated_with', 'to': 'Group Attribute', 'color': '#9f5470'}, {'from': 'Behavior', 'label': 'associated_with', 'to': 'Group', 'color': '#9f5470'}, {'from': 'Behavior', 'label': 'associated_with', 'to': 'Occupation or Discipline', 'color': '#9f5470'}, {'from': 'Behavior', 'label': 'associated_with', 'to': 'Organism Attribute', 'color': '#9f5470'}, {'from': 'Behavior', 'label': 'isa', 'to': 'Activity', 'color': '#c12050'}, {'from': 'Behavior', 'label': 'manifestation_of', 'to': 'Mental Process', 'color': '#c6e1c3'}, {'from': 'Behavior', 'label': 'manifestation_of', 'to': 'Mental or Behavioral Dysfunction', 'color': '#c6e1c3'}, {'from': 'Behavior', 'label': 'result_of', 'to': 'Mental Process', 'color': '#a45002'}, {'from': 'Biologic Function', 'label': 'affects', 'to': 'Organism', 'color': '#d116f2'}, {'from': 'Biologic Function', 'label': 'isa', 'to': 'Natural Phenomenon or Process', 'color': '#c12050'}, {'from': 'Biologic Function', 'label': 'process_of', 'to': 'Organism', 'color': '#1ba89e'}, {'from': 'Biologic Function', 'label': 'produces', 'to': 'Biologically Active Substance', 'color': '#649385'}, {'from': 'Biologic Function', 'label': 'produces', 'to': 'Body Substance', 'color': '#649385'}, {'from': 'Biologically Active Substance', 'label': 'associated_with', 'to': 'Virus', 'color': '#9f5470'}, {'from': 'Biologically Active Substance', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Biologically Active Substance', 'label': 'complicates', 'to': 'Biologic Function', 'color': '#b0c64d'}, {'from': 'Biologically Active Substance', 'label': 'complicates', 'to': 'Injury or Poisoning', 'color': '#b0c64d'}, {'from': 'Biologically Active Substance', 'label': 'disrupts', 'to': 'Embryonic Structure', 'color': '#32cc38'}, {'from': 'Biologically Active Substance', 'label': 'disrupts', 'to': 'Fully Formed Anatomical Structure', 'color': '#32cc38'}, {'from': 'Biologically Active Substance', 'label': 'disrupts', 'to': 'Physiologic Function', 'color': '#32cc38'}, {'from': 'Biologically Active Substance', 'label': 'isa', 'to': 'Chemical Viewed Functionally', 'color': '#c12050'}, {'from': 'Biomedical Occupation or Discipline', 'label': 'isa', 'to': 'Occupation or Discipline', 'color': '#c12050'}, {'from': 'Biomedical or Dental Material', 'label': 'isa', 'to': 'Chemical Viewed Functionally', 'color': '#c12050'}, {'from': 'Bird', 'label': 'isa', 'to': 'Vertebrate', 'color': '#c12050'}, {'from': 'Body Location or Region', 'label': 'adjacent_to', 'to': 'Body Location or Region', 'color': '#56b423'}, {'from': 'Body Location or Region', 'label': 'adjacent_to', 'to': 'Body Part, Organ, or Organ Component', 'color': '#56b423'}, {'from': 'Body Location or Region', 'label': 'adjacent_to', 'to': 'Body Space or Junction', 'color': '#56b423'}, {'from': 'Body Location or Region', 'label': 'conceptual_part_of', 'to': 'Body Location or Region', 'color': '#1aadf3'}, {'from': 'Body Location or Region', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Body Location or Region', 'label': 'conceptual_part_of', 'to': 'Fully Formed Anatomical Structure', 'color': '#1aadf3'}, {'from': 'Body Location or Region', 'label': 'connected_to', 'to': 'Body Location or Region', 'color': '#335302'}, {'from': 'Body Location or Region', 'label': 'isa', 'to': 'Spatial Concept', 'color': '#c12050'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Anatomical Abnormality', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Biologic Function', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Body Location or Region', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Injury or Poisoning', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'location_of', 'to': 'Tissue', 'color': '#d82e0d'}, {'from': 'Body Location or Region', 'label': 'traverses', 'to': 'Body Location or Region', 'color': '#c2c413'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'adjacent_to', 'to': 'Body Part, Organ, or Organ Component', 'color': '#56b423'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'adjacent_to', 'to': 'Body Space or Junction', 'color': '#56b423'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'adjacent_to', 'to': 'Cell', 'color': '#56b423'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'adjacent_to', 'to': 'Tissue', 'color': '#56b423'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'branch_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#77b997'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'connected_to', 'to': 'Body Part, Organ, or Organ Component', 'color': '#335302'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'connected_to', 'to': 'Body Space or Junction', 'color': '#335302'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'connected_to', 'to': 'Body Substance', 'color': '#335302'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'connected_to', 'to': 'Tissue', 'color': '#335302'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'consists_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#bd999b'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'consists_of', 'to': 'Body Substance', 'color': '#bd999b'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'developmental_form_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#8b3baa'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'interconnects', 'to': 'Body Space or Junction', 'color': '#b461e8'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'isa', 'to': 'Fully Formed Anatomical Structure', 'color': '#c12050'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'location_of', 'to': 'Body Location or Region', 'color': '#d82e0d'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'location_of', 'to': 'Body Space or Junction', 'color': '#d82e0d'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'surrounds', 'to': 'Body Part, Organ, or Organ Component', 'color': '#e7708e'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'surrounds', 'to': 'Tissue', 'color': '#e7708e'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'traverses', 'to': 'Body Part, Organ, or Organ Component', 'color': '#c2c413'}, {'from': 'Body Part, Organ, or Organ Component', 'label': 'tributary_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#e67a90'}, {'from': 'Body Space or Junction', 'label': 'adjacent_to', 'to': 'Body Space or Junction', 'color': '#56b423'}, {'from': 'Body Space or Junction', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Body Space or Junction', 'label': 'conceptual_part_of', 'to': 'Fully Formed Anatomical Structure', 'color': '#1aadf3'}, {'from': 'Body Space or Junction', 'label': 'connected_to', 'to': 'Tissue', 'color': '#335302'}, {'from': 'Body Space or Junction', 'label': 'contains', 'to': 'Body Part, Organ, or Organ Component', 'color': '#f9b6f5'}, {'from': 'Body Space or Junction', 'label': 'contains', 'to': 'Body Substance', 'color': '#f9b6f5'}, {'from': 'Body Space or Junction', 'label': 'contains', 'to': 'Tissue', 'color': '#f9b6f5'}, {'from': 'Body Space or Junction', 'label': 'interconnects', 'to': 'Cell', 'color': '#b461e8'}, {'from': 'Body Space or Junction', 'label': 'isa', 'to': 'Spatial Concept', 'color': '#c12050'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Anatomical Abnormality', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Biologic Function', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Body Space or Junction', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Body Substance', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Cell Component', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Injury or Poisoning', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Body Space or Junction', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Body Space or Junction', 'label': 'surrounds', 'to': 'Body Space or Junction', 'color': '#e7708e'}, {'from': 'Body Space or Junction', 'label': 'surrounds', 'to': 'Cell', 'color': '#e7708e'}, {'from': 'Body Substance', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Body Substance', 'label': 'consists_of', 'to': 'Body Substance', 'color': '#bd999b'}, {'from': 'Body Substance', 'label': 'consists_of', 'to': 'Organic Chemical', 'color': '#bd999b'}, {'from': 'Body Substance', 'label': 'derivative_of', 'to': 'Tissue', 'color': '#5d22b3'}, {'from': 'Body Substance', 'label': 'isa', 'to': 'Substance', 'color': '#c12050'}, {'from': 'Body Substance', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Body Substance', 'label': 'part_of', 'to': 'Body Substance', 'color': '#613424'}, {'from': 'Body Substance', 'label': 'surrounds', 'to': 'Embryonic Structure', 'color': '#e7708e'}, {'from': 'Body System', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Body System', 'label': 'conceptual_part_of', 'to': 'Fully Formed Anatomical Structure', 'color': '#1aadf3'}, {'from': 'Body System', 'label': 'isa', 'to': 'Functional Concept', 'color': '#c12050'}, {'from': 'Carbohydrate Sequence', 'label': 'isa', 'to': 'Molecular Sequence', 'color': '#c12050'}, {'from': 'Cell Component', 'label': 'adjacent_to', 'to': 'Body Space or Junction', 'color': '#56b423'}, {'from': 'Cell Component', 'label': 'adjacent_to', 'to': 'Cell Component', 'color': '#56b423'}, {'from': 'Cell Component', 'label': 'affects', 'to': 'Physiologic Function', 'color': '#d116f2'}, {'from': 'Cell Component', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Cell Component', 'label': 'isa', 'to': 'Fully Formed Anatomical Structure', 'color': '#c12050'}, {'from': 'Cell Component', 'label': 'location_of', 'to': 'Body Space or Junction', 'color': '#d82e0d'}, {'from': 'Cell Component', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Cell Component', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Cell Component', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Cell Component', 'label': 'part_of', 'to': 'Cell Component', 'color': '#613424'}, {'from': 'Cell Component', 'label': 'part_of', 'to': 'Cell', 'color': '#613424'}, {'from': 'Cell Component', 'label': 'part_of', 'to': 'Tissue', 'color': '#613424'}, {'from': 'Cell Component', 'label': 'surrounds', 'to': 'Cell Component', 'color': '#e7708e'}, {'from': 'Cell Function', 'label': 'isa', 'to': 'Physiologic Function', 'color': '#c12050'}, {'from': 'Cell or Molecular Dysfunction', 'label': 'isa', 'to': 'Pathologic Function', 'color': '#c12050'}, {'from': 'Cell', 'label': 'adjacent_to', 'to': 'Cell', 'color': '#56b423'}, {'from': 'Cell', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Cell', 'label': 'consists_of', 'to': 'Cell', 'color': '#bd999b'}, {'from': 'Cell', 'label': 'developmental_form_of', 'to': 'Cell', 'color': '#8b3baa'}, {'from': 'Cell', 'label': 'isa', 'to': 'Fully Formed Anatomical Structure', 'color': '#c12050'}, {'from': 'Cell', 'label': 'location_of', 'to': 'Body Space or Junction', 'color': '#d82e0d'}, {'from': 'Cell', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Cell', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Cell', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Cell', 'label': 'part_of', 'to': 'Cell', 'color': '#613424'}, {'from': 'Cell', 'label': 'part_of', 'to': 'Tissue', 'color': '#613424'}, {'from': 'Chemical Viewed Functionally', 'label': 'isa', 'to': 'Chemical', 'color': '#c12050'}, {'from': 'Chemical Viewed Structurally', 'label': 'isa', 'to': 'Chemical', 'color': '#c12050'}, {'from': 'Chemical', 'label': 'affects', 'to': 'Natural Phenomenon or Process', 'color': '#d116f2'}, {'from': 'Chemical', 'label': 'interacts_with', 'to': 'Chemical', 'color': '#81965a'}, {'from': 'Chemical', 'label': 'isa', 'to': 'Substance', 'color': '#c12050'}, {'from': 'Classification', 'label': 'isa', 'to': 'Intellectual Product', 'color': '#c12050'}, {'from': 'Clinical Attribute', 'label': 'isa', 'to': 'Organism Attribute', 'color': '#c12050'}, {'from': 'Clinical Drug', 'label': 'isa', 'to': 'Manufactured Object', 'color': '#c12050'}, {'from': 'Conceptual Entity', 'label': 'isa', 'to': 'Entity', 'color': '#c12050'}, {'from': 'Congenital Abnormality', 'label': 'isa', 'to': 'Anatomical Abnormality', 'color': '#c12050'}, {'from': 'Daily or Recreational Activity', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Daily or Recreational Activity', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Daily or Recreational Activity', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Daily or Recreational Activity', 'label': 'isa', 'to': 'Activity', 'color': '#c12050'}, {'from': 'Diagnostic Procedure', 'label': 'affects', 'to': 'Patient or Disabled Group', 'color': '#d116f2'}, {'from': 'Diagnostic Procedure', 'label': 'analyzes', 'to': 'Body Substance', 'color': '#9a128e'}, {'from': 'Diagnostic Procedure', 'label': 'analyzes', 'to': 'Chemical', 'color': '#9a128e'}, {'from': 'Diagnostic Procedure', 'label': 'assesses_effect_of', 'to': 'Chemical', 'color': '#1b7515'}, {'from': 'Diagnostic Procedure', 'label': 'diagnoses', 'to': 'Anatomical Abnormality', 'color': '#3c9595'}, {'from': 'Diagnostic Procedure', 'label': 'diagnoses', 'to': 'Injury or Poisoning', 'color': '#3c9595'}, {'from': 'Diagnostic Procedure', 'label': 'diagnoses', 'to': 'Pathologic Function', 'color': '#3c9595'}, {'from': 'Diagnostic Procedure', 'label': 'isa', 'to': 'Health Care Activity', 'color': '#c12050'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Body Substance', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Chemical', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Natural Phenomenon or Process', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Organism Attribute', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Quantitative Concept', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'measures', 'to': 'Temporal Concept', 'color': '#396089'}, {'from': 'Diagnostic Procedure', 'label': 'method_of', 'to': 'Diagnostic Procedure', 'color': '#f6f161'}, {'from': 'Diagnostic Procedure', 'label': 'precedes', 'to': 'Therapeutic or Preventive Procedure', 'color': '#1773e0'}, {'from': 'Diagnostic Procedure', 'label': 'uses', 'to': 'Manufactured Object', 'color': '#004a2e'}, {'from': 'Diagnostic Procedure', 'label': 'uses', 'to': 'Pharmacologic Substance', 'color': '#004a2e'}, {'from': 'Disease or Syndrome', 'label': 'conceptually_related_to', 'to': 'Experimental Model of Disease', 'color': '#999aca'}, {'from': 'Disease or Syndrome', 'label': 'isa', 'to': 'Pathologic Function', 'color': '#c12050'}, {'from': 'Disease or Syndrome', 'label': 'produces', 'to': 'Tissue', 'color': '#649385'}, {'from': 'Drug Delivery Device', 'label': 'contains', 'to': 'Clinical Drug', 'color': '#f9b6f5'}, {'from': 'Drug Delivery Device', 'label': 'isa', 'to': 'Medical Device', 'color': '#c12050'}, {'from': 'Educational Activity', 'label': 'isa', 'to': 'Occupational Activity', 'color': '#c12050'}, {'from': 'Element, Ion, or Isotope', 'label': 'isa', 'to': 'Chemical Viewed Structurally', 'color': '#c12050'}, {'from': 'Embryonic Structure', 'label': 'contains', 'to': 'Body Substance', 'color': '#f9b6f5'}, {'from': 'Embryonic Structure', 'label': 'developmental_form_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#8b3baa'}, {'from': 'Embryonic Structure', 'label': 'developmental_form_of', 'to': 'Cell', 'color': '#8b3baa'}, {'from': 'Embryonic Structure', 'label': 'developmental_form_of', 'to': 'Embryonic Structure', 'color': '#8b3baa'}, {'from': 'Embryonic Structure', 'label': 'developmental_form_of', 'to': 'Tissue', 'color': '#8b3baa'}, {'from': 'Embryonic Structure', 'label': 'interconnects', 'to': 'Embryonic Structure', 'color': '#b461e8'}, {'from': 'Embryonic Structure', 'label': 'isa', 'to': 'Anatomical Structure', 'color': '#c12050'}, {'from': 'Embryonic Structure', 'label': 'location_of', 'to': 'Biologic Function', 'color': '#d82e0d'}, {'from': 'Embryonic Structure', 'label': 'part_of', 'to': 'Cell', 'color': '#613424'}, {'from': 'Embryonic Structure', 'label': 'part_of', 'to': 'Embryonic Structure', 'color': '#613424'}, {'from': 'Embryonic Structure', 'label': 'surrounds', 'to': 'Cell', 'color': '#e7708e'}, {'from': 'Embryonic Structure', 'label': 'surrounds', 'to': 'Embryonic Structure', 'color': '#e7708e'}, {'from': 'Entity', 'label': 'issue_in', 'to': 'Occupation or Discipline', 'color': '#fa3eb9'}, {'from': 'Environmental Effect of Humans', 'label': 'isa', 'to': 'Human-caused Phenomenon or Process', 'color': '#c12050'}, {'from': 'Enzyme', 'label': 'isa', 'to': 'Biologically Active Substance', 'color': '#c12050'}, {'from': 'Eukaryote', 'label': 'isa', 'to': 'Organism', 'color': '#c12050'}, {'from': 'Event', 'label': 'issue_in', 'to': 'Occupation or Discipline', 'color': '#fa3eb9'}, {'from': 'Experimental Model of Disease', 'label': 'isa', 'to': 'Pathologic Function', 'color': '#c12050'}, {'from': 'Family Group', 'label': 'isa', 'to': 'Group', 'color': '#c12050'}, {'from': 'Finding', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Finding', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Finding', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Finding', 'label': 'co-occurs_with', 'to': 'Finding', 'color': '#a0cae5'}, {'from': 'Finding', 'label': 'evaluation_of', 'to': 'Biologic Function', 'color': '#53de58'}, {'from': 'Finding', 'label': 'evaluation_of', 'to': 'Organism Attribute', 'color': '#53de58'}, {'from': 'Finding', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Finding', 'label': 'manifestation_of', 'to': 'Anatomical Abnormality', 'color': '#c6e1c3'}, {'from': 'Finding', 'label': 'manifestation_of', 'to': 'Biologic Function', 'color': '#c6e1c3'}, {'from': 'Finding', 'label': 'manifestation_of', 'to': 'Injury or Poisoning', 'color': '#c6e1c3'}, {'from': 'Fish', 'label': 'isa', 'to': 'Vertebrate', 'color': '#c12050'}, {'from': 'Food', 'label': 'affects', 'to': 'Biologic Function', 'color': '#d116f2'}, {'from': 'Food', 'label': 'isa', 'to': 'Substance', 'color': '#c12050'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'contains', 'to': 'Body Substance', 'color': '#f9b6f5'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'isa', 'to': 'Anatomical Structure', 'color': '#c12050'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'location_of', 'to': 'Anatomical Abnormality', 'color': '#d82e0d'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'location_of', 'to': 'Biologic Function', 'color': '#d82e0d'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'location_of', 'to': 'Injury or Poisoning', 'color': '#d82e0d'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'produces', 'to': 'Biologically Active Substance', 'color': '#649385'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'produces', 'to': 'Body Substance', 'color': '#649385'}, {'from': 'Fully Formed Anatomical Structure', 'label': 'produces', 'to': 'Organic Chemical', 'color': '#649385'}, {'from': 'Functional Concept', 'label': 'isa', 'to': 'Idea or Concept', 'color': '#c12050'}, {'from': 'Fungus', 'label': 'causes', 'to': 'Pathologic Function', 'color': '#863fc9'}, {'from': 'Fungus', 'label': 'isa', 'to': 'Eukaryote', 'color': '#c12050'}, {'from': 'Fungus', 'label': 'location_of', 'to': 'Biologically Active Substance', 'color': '#d82e0d'}, {'from': 'Gene or Genome', 'label': 'affects', 'to': 'Physiologic Function', 'color': '#d116f2'}, {'from': 'Gene or Genome', 'label': 'carries_out', 'to': 'Molecular Function', 'color': '#4673f3'}, {'from': 'Gene or Genome', 'label': 'consists_of', 'to': 'Gene or Genome', 'color': '#bd999b'}, {'from': 'Gene or Genome', 'label': 'isa', 'to': 'Fully Formed Anatomical Structure', 'color': '#c12050'}, {'from': 'Gene or Genome', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Gene or Genome', 'label': 'part_of', 'to': 'Cell Component', 'color': '#613424'}, {'from': 'Gene or Genome', 'label': 'part_of', 'to': 'Cell', 'color': '#613424'}, {'from': 'Gene or Genome', 'label': 'part_of', 'to': 'Tissue', 'color': '#613424'}, {'from': 'Genetic Function', 'label': 'isa', 'to': 'Molecular Function', 'color': '#c12050'}, {'from': 'Genetic Function', 'label': 'produces', 'to': 'Cell Component', 'color': '#649385'}, {'from': 'Geographic Area', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Geographic Area', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Geographic Area', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Geographic Area', 'label': 'isa', 'to': 'Spatial Concept', 'color': '#c12050'}, {'from': 'Governmental or Regulatory Activity', 'label': 'isa', 'to': 'Occupational Activity', 'color': '#c12050'}, {'from': 'Group Attribute', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Group Attribute', 'label': 'property_of', 'to': 'Group', 'color': '#0d978c'}, {'from': 'Group', 'label': 'exhibits', 'to': 'Behavior', 'color': '#9a2d13'}, {'from': 'Group', 'label': 'interacts_with', 'to': 'Group', 'color': '#81965a'}, {'from': 'Group', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Group', 'label': 'performs', 'to': 'Activity', 'color': '#e22f11'}, {'from': 'Group', 'label': 'produces', 'to': 'Intellectual Product', 'color': '#649385'}, {'from': 'Group', 'label': 'produces', 'to': 'Manufactured Object', 'color': '#649385'}, {'from': 'Group', 'label': 'uses', 'to': 'Intellectual Product', 'color': '#004a2e'}, {'from': 'Group', 'label': 'uses', 'to': 'Manufactured Object', 'color': '#004a2e'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'complicates', 'to': 'Biologic Function', 'color': '#b0c64d'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'complicates', 'to': 'Injury or Poisoning', 'color': '#b0c64d'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'disrupts', 'to': 'Embryonic Structure', 'color': '#32cc38'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'disrupts', 'to': 'Fully Formed Anatomical Structure', 'color': '#32cc38'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'disrupts', 'to': 'Physiologic Function', 'color': '#32cc38'}, {'from': 'Hazardous or Poisonous Substance', 'label': 'isa', 'to': 'Chemical Viewed Functionally', 'color': '#c12050'}, {'from': 'Health Care Activity', 'label': 'affects', 'to': 'Biologic Function', 'color': '#d116f2'}, {'from': 'Health Care Activity', 'label': 'isa', 'to': 'Occupational Activity', 'color': '#c12050'}, {'from': 'Health Care Related Organization', 'label': 'isa', 'to': 'Organization', 'color': '#c12050'}, {'from': 'Health Care Related Organization', 'label': 'manages', 'to': 'Patient or Disabled Group', 'color': '#e4030b'}, {'from': 'Hormone', 'label': 'isa', 'to': 'Biologically Active Substance', 'color': '#c12050'}, {'from': 'Human-caused Phenomenon or Process', 'label': 'isa', 'to': 'Phenomenon or Process', 'color': '#c12050'}, {'from': 'Human', 'label': 'isa', 'to': 'Mammal', 'color': '#c12050'}, {'from': 'Idea or Concept', 'label': 'conceptual_part_of', 'to': 'Behavior', 'color': '#1aadf3'}, {'from': 'Idea or Concept', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Idea or Concept', 'label': 'result_of', 'to': 'Mental Process', 'color': '#a45002'}, {'from': 'Immunologic Factor', 'label': 'indicates', 'to': 'Bacterium', 'color': '#3e79c3'}, {'from': 'Immunologic Factor', 'label': 'indicates', 'to': 'Pathologic Function', 'color': '#3e79c3'}, {'from': 'Immunologic Factor', 'label': 'indicates', 'to': 'Virus', 'color': '#3e79c3'}, {'from': 'Immunologic Factor', 'label': 'isa', 'to': 'Biologically Active Substance', 'color': '#c12050'}, {'from': 'Indicator, Reagent, or Diagnostic Aid', 'label': 'isa', 'to': 'Chemical Viewed Functionally', 'color': '#c12050'}, {'from': 'Individual Behavior', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Individual Behavior', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Individual Behavior', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Individual Behavior', 'label': 'conceptually_related_to', 'to': 'Idea or Concept', 'color': '#999aca'}, {'from': 'Individual Behavior', 'label': 'isa', 'to': 'Behavior', 'color': '#c12050'}, {'from': 'Individual Behavior', 'label': 'process_of', 'to': 'Social Behavior', 'color': '#1ba89e'}, {'from': 'Injury or Poisoning', 'label': 'associated_with', 'to': 'Organism Attribute', 'color': '#9f5470'}, {'from': 'Injury or Poisoning', 'label': 'co-occurs_with', 'to': 'Injury or Poisoning', 'color': '#a0cae5'}, {'from': 'Injury or Poisoning', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Injury or Poisoning', 'label': 'complicates', 'to': 'Pathologic Function', 'color': '#b0c64d'}, {'from': 'Injury or Poisoning', 'label': 'disrupts', 'to': 'Embryonic Structure', 'color': '#32cc38'}, {'from': 'Injury or Poisoning', 'label': 'disrupts', 'to': 'Fully Formed Anatomical Structure', 'color': '#32cc38'}, {'from': 'Injury or Poisoning', 'label': 'disrupts', 'to': 'Physiologic Function', 'color': '#32cc38'}, {'from': 'Injury or Poisoning', 'label': 'isa', 'to': 'Phenomenon or Process', 'color': '#c12050'}, {'from': 'Injury or Poisoning', 'label': 'occurs_in', 'to': 'Group', 'color': '#3f75d5'}, {'from': 'Injury or Poisoning', 'label': 'result_of', 'to': 'Behavior', 'color': '#a45002'}, {'from': 'Injury or Poisoning', 'label': 'result_of', 'to': 'Health Care Activity', 'color': '#a45002'}, {'from': 'Inorganic Chemical', 'label': 'isa', 'to': 'Chemical Viewed Structurally', 'color': '#c12050'}, {'from': 'Intellectual Product', 'label': 'conceptual_part_of', 'to': 'Diagnostic Procedure', 'color': '#1aadf3'}, {'from': 'Intellectual Product', 'label': 'conceptual_part_of', 'to': 'Intellectual Product', 'color': '#1aadf3'}, {'from': 'Intellectual Product', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Laboratory Procedure', 'label': 'analyzes', 'to': 'Body Substance', 'color': '#9a128e'}, {'from': 'Laboratory Procedure', 'label': 'analyzes', 'to': 'Chemical', 'color': '#9a128e'}, {'from': 'Laboratory Procedure', 'label': 'assesses_effect_of', 'to': 'Chemical', 'color': '#1b7515'}, {'from': 'Laboratory Procedure', 'label': 'assesses_effect_of', 'to': 'Natural Phenomenon or Process', 'color': '#1b7515'}, {'from': 'Laboratory Procedure', 'label': 'diagnoses', 'to': 'Anatomical Abnormality', 'color': '#3c9595'}, {'from': 'Laboratory Procedure', 'label': 'diagnoses', 'to': 'Injury or Poisoning', 'color': '#3c9595'}, {'from': 'Laboratory Procedure', 'label': 'diagnoses', 'to': 'Pathologic Function', 'color': '#3c9595'}, {'from': 'Laboratory Procedure', 'label': 'isa', 'to': 'Health Care Activity', 'color': '#c12050'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Body Substance', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Chemical', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Natural Phenomenon or Process', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Organism Attribute', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Quantitative Concept', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'measures', 'to': 'Temporal Concept', 'color': '#396089'}, {'from': 'Laboratory Procedure', 'label': 'method_of', 'to': 'Diagnostic Procedure', 'color': '#f6f161'}, {'from': 'Laboratory Procedure', 'label': 'method_of', 'to': 'Laboratory Procedure', 'color': '#f6f161'}, {'from': 'Laboratory Procedure', 'label': 'method_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#f6f161'}, {'from': 'Laboratory or Test Result', 'label': 'conceptual_part_of', 'to': 'Laboratory or Test Result', 'color': '#1aadf3'}, {'from': 'Laboratory or Test Result', 'label': 'indicates', 'to': 'Anatomical Abnormality', 'color': '#3e79c3'}, {'from': 'Laboratory or Test Result', 'label': 'indicates', 'to': 'Biologic Function', 'color': '#3e79c3'}, {'from': 'Laboratory or Test Result', 'label': 'indicates', 'to': 'Injury or Poisoning', 'color': '#3e79c3'}, {'from': 'Laboratory or Test Result', 'label': 'isa', 'to': 'Finding', 'color': '#c12050'}, {'from': 'Laboratory or Test Result', 'label': 'measurement_of', 'to': 'Physiologic Function', 'color': '#1b0ebc'}, {'from': 'Laboratory or Test Result', 'label': 'measurement_of', 'to': 'Substance', 'color': '#1b0ebc'}, {'from': 'Laboratory or Test Result', 'label': 'result_of', 'to': 'Diagnostic Procedure', 'color': '#a45002'}, {'from': 'Laboratory or Test Result', 'label': 'result_of', 'to': 'Laboratory Procedure', 'color': '#a45002'}, {'from': 'Language', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Machine Activity', 'label': 'isa', 'to': 'Activity', 'color': '#c12050'}, {'from': 'Machine Activity', 'label': 'method_of', 'to': 'Diagnostic Procedure', 'color': '#f6f161'}, {'from': 'Machine Activity', 'label': 'method_of', 'to': 'Laboratory Procedure', 'color': '#f6f161'}, {'from': 'Machine Activity', 'label': 'method_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#f6f161'}, {'from': 'Mammal', 'label': 'isa', 'to': 'Vertebrate', 'color': '#c12050'}, {'from': 'Manufactured Object', 'label': 'causes', 'to': 'Anatomical Abnormality', 'color': '#863fc9'}, {'from': 'Manufactured Object', 'label': 'causes', 'to': 'Injury or Poisoning', 'color': '#863fc9'}, {'from': 'Manufactured Object', 'label': 'causes', 'to': 'Pathologic Function', 'color': '#863fc9'}, {'from': 'Manufactured Object', 'label': 'isa', 'to': 'Physical Object', 'color': '#c12050'}, {'from': 'Medical Device', 'label': 'isa', 'to': 'Manufactured Object', 'color': '#c12050'}, {'from': 'Medical Device', 'label': 'prevents', 'to': 'Injury or Poisoning', 'color': '#d61d8f'}, {'from': 'Medical Device', 'label': 'prevents', 'to': 'Pathologic Function', 'color': '#d61d8f'}, {'from': 'Medical Device', 'label': 'treats', 'to': 'Anatomical Abnormality', 'color': '#e67a62'}, {'from': 'Medical Device', 'label': 'treats', 'to': 'Injury or Poisoning', 'color': '#e67a62'}, {'from': 'Medical Device', 'label': 'treats', 'to': 'Pathologic Function', 'color': '#e67a62'}, {'from': 'Medical Device', 'label': 'treats', 'to': 'Sign or Symptom', 'color': '#e67a62'}, {'from': 'Mental Process', 'label': 'affects', 'to': 'Behavior', 'color': '#d116f2'}, {'from': 'Mental Process', 'label': 'isa', 'to': 'Organism Function', 'color': '#c12050'}, {'from': 'Mental Process', 'label': 'process_of', 'to': 'Bacterium', 'color': '#1ba89e'}, {'from': 'Mental Process', 'label': 'process_of', 'to': 'Fungus', 'color': '#1ba89e'}, {'from': 'Mental Process', 'label': 'process_of', 'to': 'Plant', 'color': '#1ba89e'}, {'from': 'Mental Process', 'label': 'process_of', 'to': 'Virus', 'color': '#1ba89e'}, {'from': 'Mental Process', 'label': 'result_of', 'to': 'Behavior', 'color': '#a45002'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'affects', 'to': 'Behavior', 'color': '#d116f2'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'isa', 'to': 'Disease or Syndrome', 'color': '#c12050'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'process_of', 'to': 'Bacterium', 'color': '#1ba89e'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'process_of', 'to': 'Fungus', 'color': '#1ba89e'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'process_of', 'to': 'Plant', 'color': '#1ba89e'}, {'from': 'Mental or Behavioral Dysfunction', 'label': 'process_of', 'to': 'Virus', 'color': '#1ba89e'}, {'from': 'Molecular Biology Research Technique', 'label': 'isa', 'to': 'Research Activity', 'color': '#c12050'}, {'from': 'Molecular Biology Research Technique', 'label': 'method_of', 'to': 'Diagnostic Procedure', 'color': '#f6f161'}, {'from': 'Molecular Biology Research Technique', 'label': 'method_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#f6f161'}, {'from': 'Molecular Function', 'label': 'isa', 'to': 'Physiologic Function', 'color': '#c12050'}, {'from': 'Molecular Sequence', 'label': 'isa', 'to': 'Spatial Concept', 'color': '#c12050'}, {'from': 'Natural Phenomenon or Process', 'label': 'affects', 'to': 'Natural Phenomenon or Process', 'color': '#d116f2'}, {'from': 'Natural Phenomenon or Process', 'label': 'isa', 'to': 'Phenomenon or Process', 'color': '#c12050'}, {'from': 'Natural Phenomenon or Process', 'label': 'process_of', 'to': 'Natural Phenomenon or Process', 'color': '#1ba89e'}, {'from': 'Neoplastic Process', 'label': 'isa', 'to': 'Disease or Syndrome', 'color': '#c12050'}, {'from': 'Nucleic Acid, Nucleoside, or Nucleotide', 'label': 'isa', 'to': 'Organic Chemical', 'color': '#c12050'}, {'from': 'Nucleotide Sequence', 'label': 'isa', 'to': 'Molecular Sequence', 'color': '#c12050'}, {'from': 'Nucleotide Sequence', 'label': 'part_of', 'to': 'Nucleotide Sequence', 'color': '#613424'}, {'from': 'Nucleotide Sequence', 'label': 'property_of', 'to': 'Gene or Genome', 'color': '#0d978c'}, {'from': 'Nucleotide Sequence', 'label': 'property_of', 'to': 'Nucleic Acid, Nucleoside, or Nucleotide', 'color': '#0d978c'}, {'from': 'Occupation or Discipline', 'label': 'conceptual_part_of', 'to': 'Occupation or Discipline', 'color': '#1aadf3'}, {'from': 'Occupation or Discipline', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Occupational Activity', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Occupational Activity', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Occupational Activity', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Occupational Activity', 'label': 'isa', 'to': 'Activity', 'color': '#c12050'}, {'from': 'Occupational Activity', 'label': 'method_of', 'to': 'Occupation or Discipline', 'color': '#f6f161'}, {'from': 'Organ or Tissue Function', 'label': 'conceptual_part_of', 'to': 'Temporal Concept', 'color': '#1aadf3'}, {'from': 'Organ or Tissue Function', 'label': 'degree_of', 'to': 'Organ or Tissue Function', 'color': '#2f52a1'}, {'from': 'Organ or Tissue Function', 'label': 'isa', 'to': 'Physiologic Function', 'color': '#c12050'}, {'from': 'Organ or Tissue Function', 'label': 'occurs_in', 'to': 'Organism Function', 'color': '#3f75d5'}, {'from': 'Organic Chemical', 'label': 'isa', 'to': 'Chemical Viewed Structurally', 'color': '#c12050'}, {'from': 'Organism Attribute', 'label': 'associated_with', 'to': 'Organism Attribute', 'color': '#9f5470'}, {'from': 'Organism Attribute', 'label': 'degree_of', 'to': 'Organism Attribute', 'color': '#2f52a1'}, {'from': 'Organism Attribute', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Organism Attribute', 'label': 'manifestation_of', 'to': 'Physiologic Function', 'color': '#c6e1c3'}, {'from': 'Organism Attribute', 'label': 'measurement_of', 'to': 'Physiologic Function', 'color': '#1b0ebc'}, {'from': 'Organism Attribute', 'label': 'property_of', 'to': 'Organism', 'color': '#0d978c'}, {'from': 'Organism Attribute', 'label': 'result_of', 'to': 'Phenomenon or Process', 'color': '#a45002'}, {'from': 'Organism Function', 'label': 'conceptual_part_of', 'to': 'Temporal Concept', 'color': '#1aadf3'}, {'from': 'Organism Function', 'label': 'degree_of', 'to': 'Organism Function', 'color': '#2f52a1'}, {'from': 'Organism Function', 'label': 'isa', 'to': 'Physiologic Function', 'color': '#c12050'}, {'from': 'Organism Function', 'label': 'produces', 'to': 'Age Group', 'color': '#649385'}, {'from': 'Organism Function', 'label': 'produces', 'to': 'Family Group', 'color': '#649385'}, {'from': 'Organism', 'label': 'interacts_with', 'to': 'Organism', 'color': '#81965a'}, {'from': 'Organism', 'label': 'isa', 'to': 'Physical Object', 'color': '#c12050'}, {'from': 'Organization', 'label': 'carries_out', 'to': 'Occupational Activity', 'color': '#4673f3'}, {'from': 'Organization', 'label': 'isa', 'to': 'Conceptual Entity', 'color': '#c12050'}, {'from': 'Organization', 'label': 'location_of', 'to': 'Occupational Activity', 'color': '#d82e0d'}, {'from': 'Organization', 'label': 'produces', 'to': 'Intellectual Product', 'color': '#649385'}, {'from': 'Pathologic Function', 'label': 'associated_with', 'to': 'Organism Attribute', 'color': '#9f5470'}, {'from': 'Pathologic Function', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Pathologic Function', 'label': 'co-occurs_with', 'to': 'Anatomical Abnormality', 'color': '#a0cae5'}, {'from': 'Pathologic Function', 'label': 'co-occurs_with', 'to': 'Injury or Poisoning', 'color': '#a0cae5'}, {'from': 'Pathologic Function', 'label': 'co-occurs_with', 'to': 'Pathologic Function', 'color': '#a0cae5'}, {'from': 'Pathologic Function', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Pathologic Function', 'label': 'complicates', 'to': 'Injury or Poisoning', 'color': '#b0c64d'}, {'from': 'Pathologic Function', 'label': 'complicates', 'to': 'Pathologic Function', 'color': '#b0c64d'}, {'from': 'Pathologic Function', 'label': 'degree_of', 'to': 'Pathologic Function', 'color': '#2f52a1'}, {'from': 'Pathologic Function', 'label': 'isa', 'to': 'Biologic Function', 'color': '#c12050'}, {'from': 'Pathologic Function', 'label': 'manifestation_of', 'to': 'Injury or Poisoning', 'color': '#c6e1c3'}, {'from': 'Pathologic Function', 'label': 'manifestation_of', 'to': 'Pathologic Function', 'color': '#c6e1c3'}, {'from': 'Pathologic Function', 'label': 'manifestation_of', 'to': 'Physiologic Function', 'color': '#c6e1c3'}, {'from': 'Pathologic Function', 'label': 'occurs_in', 'to': 'Disease or Syndrome', 'color': '#3f75d5'}, {'from': 'Pathologic Function', 'label': 'occurs_in', 'to': 'Group', 'color': '#3f75d5'}, {'from': 'Pathologic Function', 'label': 'occurs_in', 'to': 'Injury or Poisoning', 'color': '#3f75d5'}, {'from': 'Pathologic Function', 'label': 'precedes', 'to': 'Pathologic Function', 'color': '#1773e0'}, {'from': 'Pathologic Function', 'label': 'result_of', 'to': 'Behavior', 'color': '#a45002'}, {'from': 'Pathologic Function', 'label': 'result_of', 'to': 'Health Care Activity', 'color': '#a45002'}, {'from': 'Patient or Disabled Group', 'label': 'isa', 'to': 'Group', 'color': '#c12050'}, {'from': 'Pharmacologic Substance', 'label': 'complicates', 'to': 'Anatomical Abnormality', 'color': '#b0c64d'}, {'from': 'Pharmacologic Substance', 'label': 'complicates', 'to': 'Biologic Function', 'color': '#b0c64d'}, {'from': 'Pharmacologic Substance', 'label': 'complicates', 'to': 'Injury or Poisoning', 'color': '#b0c64d'}, {'from': 'Pharmacologic Substance', 'label': 'diagnoses', 'to': 'Pathologic Function', 'color': '#3c9595'}, {'from': 'Pharmacologic Substance', 'label': 'disrupts', 'to': 'Embryonic Structure', 'color': '#32cc38'}, {'from': 'Pharmacologic Substance', 'label': 'disrupts', 'to': 'Fully Formed Anatomical Structure', 'color': '#32cc38'}, {'from': 'Pharmacologic Substance', 'label': 'disrupts', 'to': 'Physiologic Function', 'color': '#32cc38'}, {'from': 'Pharmacologic Substance', 'label': 'isa', 'to': 'Chemical Viewed Functionally', 'color': '#c12050'}, {'from': 'Pharmacologic Substance', 'label': 'prevents', 'to': 'Pathologic Function', 'color': '#d61d8f'}, {'from': 'Pharmacologic Substance', 'label': 'treats', 'to': 'Anatomical Abnormality', 'color': '#e67a62'}, {'from': 'Pharmacologic Substance', 'label': 'treats', 'to': 'Injury or Poisoning', 'color': '#e67a62'}, {'from': 'Pharmacologic Substance', 'label': 'treats', 'to': 'Pathologic Function', 'color': '#e67a62'}, {'from': 'Pharmacologic Substance', 'label': 'treats', 'to': 'Sign or Symptom', 'color': '#e67a62'}, {'from': 'Phenomenon or Process', 'label': 'isa', 'to': 'Event', 'color': '#c12050'}, {'from': 'Phenomenon or Process', 'label': 'result_of', 'to': 'Anatomical Abnormality', 'color': '#a45002'}, {'from': 'Phenomenon or Process', 'label': 'result_of', 'to': 'Phenomenon or Process', 'color': '#a45002'}, {'from': 'Physical Object', 'label': 'isa', 'to': 'Entity', 'color': '#c12050'}, {'from': 'Physiologic Function', 'label': 'affects', 'to': 'Organism Attribute', 'color': '#d116f2'}, {'from': 'Physiologic Function', 'label': 'co-occurs_with', 'to': 'Physiologic Function', 'color': '#a0cae5'}, {'from': 'Physiologic Function', 'label': 'isa', 'to': 'Biologic Function', 'color': '#c12050'}, {'from': 'Physiologic Function', 'label': 'occurs_in', 'to': 'Temporal Concept', 'color': '#3f75d5'}, {'from': 'Physiologic Function', 'label': 'precedes', 'to': 'Physiologic Function', 'color': '#1773e0'}, {'from': 'Plant', 'label': 'isa', 'to': 'Eukaryote', 'color': '#c12050'}, {'from': 'Plant', 'label': 'location_of', 'to': 'Biologically Active Substance', 'color': '#d82e0d'}, {'from': 'Population Group', 'label': 'associated_with', 'to': 'Anatomical Abnormality', 'color': '#9f5470'}, {'from': 'Population Group', 'label': 'associated_with', 'to': 'Injury or Poisoning', 'color': '#9f5470'}, {'from': 'Population Group', 'label': 'associated_with', 'to': 'Pathologic Function', 'color': '#9f5470'}, {'from': 'Population Group', 'label': 'isa', 'to': 'Group', 'color': '#c12050'}, {'from': 'Professional Society', 'label': 'isa', 'to': 'Organization', 'color': '#c12050'}, {'from': 'Professional or Occupational Group', 'label': 'diagnoses', 'to': 'Pathologic Function', 'color': '#3c9595'}, {'from': 'Professional or Occupational Group', 'label': 'isa', 'to': 'Group', 'color': '#c12050'}, {'from': 'Professional or Occupational Group', 'label': 'manages', 'to': 'Organization', 'color': '#e4030b'}, {'from': 'Professional or Occupational Group', 'label': 'practices', 'to': 'Occupation or Discipline', 'color': '#8aabf7'}, {'from': 'Professional or Occupational Group', 'label': 'treats', 'to': 'Patient or Disabled Group', 'color': '#e67a62'}, {'from': 'Qualitative Concept', 'label': 'evaluation_of', 'to': 'Activity', 'color': '#53de58'}, {'from': 'Qualitative Concept', 'label': 'isa', 'to': 'Idea or Concept', 'color': '#c12050'}, {'from': 'Quantitative Concept', 'label': 'conceptual_part_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#1aadf3'}, {'from': 'Quantitative Concept', 'label': 'isa', 'to': 'Idea or Concept', 'color': '#c12050'}, {'from': 'Quantitative Concept', 'label': 'measurement_of', 'to': 'Physiologic Function', 'color': '#1b0ebc'}, {'from': 'Quantitative Concept', 'label': 'measurement_of', 'to': 'Spatial Concept', 'color': '#1b0ebc'}, {'from': 'Receptor', 'label': 'isa', 'to': 'Biologically Active Substance', 'color': '#c12050'}, {'from': 'Regulation or Law', 'label': 'affects', 'to': 'Group', 'color': '#d116f2'}, {'from': 'Regulation or Law', 'label': 'affects', 'to': 'Organization', 'color': '#d116f2'}, {'from': 'Regulation or Law', 'label': 'isa', 'to': 'Intellectual Product', 'color': '#c12050'}, {'from': 'Reptile', 'label': 'isa', 'to': 'Vertebrate', 'color': '#c12050'}, {'from': 'Research Activity', 'label': 'affects', 'to': 'Mental Process', 'color': '#d116f2'}, {'from': 'Research Activity', 'label': 'isa', 'to': 'Occupational Activity', 'color': '#c12050'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Body Substance', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Chemical', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Natural Phenomenon or Process', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Organism Attribute', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Quantitative Concept', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'measures', 'to': 'Temporal Concept', 'color': '#396089'}, {'from': 'Research Activity', 'label': 'uses', 'to': 'Research Device', 'color': '#004a2e'}, {'from': 'Research Device', 'label': 'isa', 'to': 'Manufactured Object', 'color': '#c12050'}, {'from': 'Self-help or Relief Organization', 'label': 'isa', 'to': 'Organization', 'color': '#c12050'}, {'from': 'Self-help or Relief Organization', 'label': 'manages', 'to': 'Patient or Disabled Group', 'color': '#e4030b'}, {'from': 'Sign or Symptom', 'label': 'degree_of', 'to': 'Sign or Symptom', 'color': '#2f52a1'}, {'from': 'Sign or Symptom', 'label': 'diagnoses', 'to': 'Anatomical Abnormality', 'color': '#3c9595'}, {'from': 'Sign or Symptom', 'label': 'diagnoses', 'to': 'Injury or Poisoning', 'color': '#3c9595'}, {'from': 'Sign or Symptom', 'label': 'diagnoses', 'to': 'Pathologic Function', 'color': '#3c9595'}, {'from': 'Sign or Symptom', 'label': 'isa', 'to': 'Finding', 'color': '#c12050'}, {'from': 'Social Behavior', 'label': 'conceptual_part_of', 'to': 'Social Behavior', 'color': '#1aadf3'}, {'from': 'Social Behavior', 'label': 'isa', 'to': 'Behavior', 'color': '#c12050'}, {'from': 'Spatial Concept', 'label': 'isa', 'to': 'Idea or Concept', 'color': '#c12050'}, {'from': 'Substance', 'label': 'causes', 'to': 'Anatomical Abnormality', 'color': '#863fc9'}, {'from': 'Substance', 'label': 'causes', 'to': 'Injury or Poisoning', 'color': '#863fc9'}, {'from': 'Substance', 'label': 'causes', 'to': 'Pathologic Function', 'color': '#863fc9'}, {'from': 'Substance', 'label': 'ingredient_of', 'to': 'Clinical Drug', 'color': '#3301dc'}, {'from': 'Substance', 'label': 'isa', 'to': 'Physical Object', 'color': '#c12050'}, {'from': 'Temporal Concept', 'label': 'conceptual_part_of', 'to': 'Cell Function', 'color': '#1aadf3'}, {'from': 'Temporal Concept', 'label': 'conceptual_part_of', 'to': 'Organ or Tissue Function', 'color': '#1aadf3'}, {'from': 'Temporal Concept', 'label': 'conceptual_part_of', 'to': 'Organism Function', 'color': '#1aadf3'}, {'from': 'Temporal Concept', 'label': 'conceptual_part_of', 'to': 'Temporal Concept', 'color': '#1aadf3'}, {'from': 'Temporal Concept', 'label': 'isa', 'to': 'Idea or Concept', 'color': '#c12050'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'affects', 'to': 'Patient or Disabled Group', 'color': '#d116f2'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'complicates', 'to': 'Biologic Function', 'color': '#b0c64d'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'isa', 'to': 'Health Care Activity', 'color': '#c12050'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'method_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#f6f161'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'prevents', 'to': 'Pathologic Function', 'color': '#d61d8f'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'treats', 'to': 'Anatomical Abnormality', 'color': '#e67a62'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'treats', 'to': 'Injury or Poisoning', 'color': '#e67a62'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'treats', 'to': 'Pathologic Function', 'color': '#e67a62'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'treats', 'to': 'Sign or Symptom', 'color': '#e67a62'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'uses', 'to': 'Food', 'color': '#004a2e'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'uses', 'to': 'Manufactured Object', 'color': '#004a2e'}, {'from': 'Therapeutic or Preventive Procedure', 'label': 'uses', 'to': 'Pharmacologic Substance', 'color': '#004a2e'}, {'from': 'Tissue', 'label': 'adjacent_to', 'to': 'Body Space or Junction', 'color': '#56b423'}, {'from': 'Tissue', 'label': 'adjacent_to', 'to': 'Tissue', 'color': '#56b423'}, {'from': 'Tissue', 'label': 'conceptual_part_of', 'to': 'Body System', 'color': '#1aadf3'}, {'from': 'Tissue', 'label': 'consists_of', 'to': 'Tissue', 'color': '#bd999b'}, {'from': 'Tissue', 'label': 'developmental_form_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#8b3baa'}, {'from': 'Tissue', 'label': 'developmental_form_of', 'to': 'Tissue', 'color': '#8b3baa'}, {'from': 'Tissue', 'label': 'isa', 'to': 'Fully Formed Anatomical Structure', 'color': '#c12050'}, {'from': 'Tissue', 'label': 'location_of', 'to': 'Body Space or Junction', 'color': '#d82e0d'}, {'from': 'Tissue', 'label': 'location_of', 'to': 'Diagnostic Procedure', 'color': '#d82e0d'}, {'from': 'Tissue', 'label': 'location_of', 'to': 'Therapeutic or Preventive Procedure', 'color': '#d82e0d'}, {'from': 'Tissue', 'label': 'part_of', 'to': 'Body Part, Organ, or Organ Component', 'color': '#613424'}, {'from': 'Tissue', 'label': 'part_of', 'to': 'Tissue', 'color': '#613424'}, {'from': 'Tissue', 'label': 'surrounds', 'to': 'Body Space or Junction', 'color': '#e7708e'}, {'from': 'Tissue', 'label': 'surrounds', 'to': 'Body Substance', 'color': '#e7708e'}, {'from': 'Tissue', 'label': 'surrounds', 'to': 'Cell Component', 'color': '#e7708e'}, {'from': 'Tissue', 'label': 'surrounds', 'to': 'Cell', 'color': '#e7708e'}, {'from': 'Tissue', 'label': 'surrounds', 'to': 'Tissue', 'color': '#e7708e'}, {'from': 'Vertebrate', 'label': 'isa', 'to': 'Animal', 'color': '#c12050'}, {'from': 'Virus', 'label': 'causes', 'to': 'Pathologic Function', 'color': '#863fc9'}, {'from': 'Virus', 'label': 'isa', 'to': 'Organism', 'color': '#c12050'}, {'from': 'Virus', 'label': 'location_of', 'to': 'Biologically Active Substance', 'color': '#d82e0d'}, {'from': 'Vitamin', 'label': 'isa', 'to': 'Biologically Active Substance', 'color': '#c12050'}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        },
+        "arrows": {
+            "to": { "enabled": true, "type": "arrow" },
+            // You can also add "from" arrows if needed
+            // "from": { "enabled": true, "type": "arrow" }
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+extractUniqueLabels();
+    generateCheckboxes();
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+                    network.on("selectNode", neighbourhoodHighlight);
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 1);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+       
+
+    </body>
+</html>

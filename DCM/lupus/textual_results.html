@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="data.js"></script>
+    <script src="nodes.js"></script>
+
+    <script src="bins.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <title>Binning Results</title>
+</head>
+<body>
+
+<h1>Binning Results</h1>
+<p><a href="index.html">Back to the main page</a></p>
+<div id='bin-list'></div>
+
+
+
+<p><a href="index.html">Back to the main page</a></p>
+
+</body>
+<script type="text/javascript">
+
+
+// Filter nodes where source is "original"
+var originalNodes = nodes.filter(node => node.source === "original");
+
+// Create a mapping of organ to nodes
+var organMapping = {};
+originalNodes.forEach(node => {
+    if (node.organs && node.organs.length > 0) {
+        node.organs.forEach(organ => {
+            if (!organMapping[organ]) organMapping[organ] = [];
+            organMapping[organ].push(node);
+        });
+    } else {
+        if (!organMapping['unbinned']) organMapping['unbinned'] = [];
+        organMapping['unbinned'].push(node);
+    }
+});
+
+// Sort organ names based on the number of nodes, with 'unbinned' at the end
+var sortedOrgans = Object.keys(organMapping).sort((a, b) => {
+    if (a === 'unbinned') return 1;
+    if (b === 'unbinned') return -1;
+    return organMapping[a].length - organMapping[b].length;
+});
+
+// Create a container to hold the output
+var outputContainer = document.createElement('div');
+
+// Iterate through sorted organ names and append them to the container
+sortedOrgans.forEach(organ => {
+    var organHeading = document.createElement('h4');
+    organHeading.textContent = organ;
+    outputContainer.appendChild(organHeading);
+    
+    var ulElement = document.createElement('ul');
+    organMapping[organ].forEach(node => {
+        var liElement = document.createElement('li');
+        liElement.textContent = `${node.preferred_name} (${node.id})`;
+        ulElement.appendChild(liElement);
+    });
+    outputContainer.appendChild(ulElement);
+});
+
+// Get the 'bin-list' div
+var binListDiv = document.getElementById('bin-list');
+
+// Append the outputContainer to the 'bin-list' div
+binListDiv.appendChild(outputContainer);
+
+    
+</script>
+
+</html>
