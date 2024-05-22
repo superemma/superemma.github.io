@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Text Span Annotation</title>
+  <style>
+    .highlight {
+      background-color: yellow;
+    }
+  </style>
+</head>
+<body>
+  <h1>Text Span Annotation</h1>
+  <div id="text-container"></div>
+  <hr>
+  <div id="spans-container"></div>
+  <button id="prev-btn">Previous</button>
+  <button id="next-btn">Next</button>
+  <button id="download-btn">Download</button>
+  <script>
+    let jsonObjects = [];
+    let currentIndex = 0;
+    const textContainer = document.getElementById('text-container');
+    const spansContainer = document.getElementById('spans-container');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const downloadBtn = document.getElementById('download-btn');
+
+    function displayAnnotation() {
+      const currentObject = jsonObjects[currentIndex];
+      textContainer.textContent = `id: ${currentObject.id} ${currentIndex + 1} of ${jsonObjects.length} `;
+
+      spansContainer.innerHTML = '';
+      currentObject.spans.forEach((span, index) => {
+        const spanText = currentObject.text.substring(span.start, span.end);
+        const spanElement = document.createElement('div');
+        spanElement.setAttribute('data-span-index', index);
+        const highlightedText = currentObject.text.substring(0, span.start) +
+          '<span class="highlight">' + spanText + '</span>' +
+          currentObject.text.substring(span.end);
+
+        spanElement.innerHTML = `
+          <h3>Span ${spanText}:</h3>
+          <p>${highlightedText}</p>
+          <h4>Person Labels:</h4>
+          <label><input type="checkbox" data-label-type="person" data-label="author" ${span.person.includes('author') ? 'checked' : ''}>Author</label>
+          <label><input type="checkbox" data-label-type="person" data-label="author_child" ${span.person.includes('author_child') ? 'checked' : ''}>Author's Child</label>
+          <label><input type="checkbox" data-label-type="person" data-label="author_partner" ${span.person.includes('author_partner') ? 'checked' : ''}>Author's Partner</label>
+          <label><input type="checkbox" data-label-type="person" data-label="author_family" ${span.person.includes('author_family') ? 'checked' : ''}>Author's Family</label>
+          <label><input type="checkbox" data-label-type="person" data-label="respondent" ${span.person.includes('respondent') ? 'checked' : ''}>Respondent</label>
+          <label><input type="checkbox" data-label-type="person" data-label="respondent_relations" ${span.person.includes('respondent_relations') ? 'checked' : ''}>Respondent's Relations</label>
+          <label><input type="checkbox" data-label-type="person" data-label="someone_else" ${span.person.includes('someone_else') ? 'checked' : ''}>Someone Else</label>
+          <label><input type="checkbox" data-label-type="person" data-label="no_person" ${span.person.includes('no_person') ? 'checked' : ''}>No Person</label>
+          <h4>Status Labels:</h4>
+          <label><input type="checkbox" data-label-type="status" data-label="actual" ${span.status.includes('actual') ? 'checked' : ''}>Actual</label>
+          <label><input type="checkbox" data-label-type="status" data-label="absent" ${span.status.includes('absent') ? 'checked' : ''}>Absent</label>
+          <label><input type="checkbox" data-label-type="status" data-label="hypothetical" ${span.status.includes('hypothetical') ? 'checked' : ''}>Hypothetical</label>
+          <label><input type="checkbox" data-label-type="status" data-label="other" ${span.status.includes('other') ? 'checked' : ''}>Other</label>
+        `;
+        spansContainer.appendChild(spanElement);
+      });
+    }
+
+    function prevAnnotation() {
+      saveAnnotation();
+      if (currentIndex > 0) {
+        currentIndex--;
+        displayAnnotation();
+      }
+    }
+
+    function nextAnnotation() {
+      saveAnnotation();
+      if (currentIndex < jsonObjects.length - 1) {
+        currentIndex++;
+        displayAnnotation();
+      }
+    }
+
+    function saveAnnotation() {
+      const spanElements = spansContainer.querySelectorAll('div[data-span-index]');
+      spanElements.forEach(spanElement => {
+        const spanIndex = parseInt(spanElement.getAttribute('data-span-index'), 10);
+        const personCheckboxes = spanElement.querySelectorAll('input[data-label-type="person"]');
+        const statusCheckboxes = spanElement.querySelectorAll('input[data-label-type="status"]');
+
+        jsonObjects[currentIndex].spans[spanIndex].person = Array.from(personCheckboxes)
+          .filter(checkbox => checkbox.checked)
+          .map(checkbox => checkbox.getAttribute('data-label'));
+
+        jsonObjects[currentIndex].spans[spanIndex].status = Array.from(statusCheckboxes)
+          .filter(checkbox => checkbox.checked)
+          .map(checkbox => checkbox.getAttribute('data-label'));
+      });
+    }
+
+    function downloadAnnotations() {
+      saveAnnotation();
+      const jsonString = JSON.stringify(jsonObjects, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'annotations.json';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function fetchData() {
+      fetch('gpt4annotation100.json')
+        .then(response => response.json())
+        .then(data => {
+          jsonObjects = data;
+          displayAnnotation();
+        })
+        .catch(error => {
+          console.error('Error fetching JSON data:', error);
+        });
+    }
+
+    prevBtn.addEventListener('click', prevAnnotation);
+    nextBtn.addEventListener('click', nextAnnotation);
+    downloadBtn.addEventListener('click', downloadAnnotations);
+
+    fetchData();
+  </script>
+</body>
+</html>
