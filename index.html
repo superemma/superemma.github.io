@@ -3,71 +3,172 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Name | My Portfolio</title>
+  <title>Emma | Data Scientist &amp; NLP Engineer</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <nav class="navbar">
     <div class="container">
-      <span class="nav-brand"> </span>
+      <span class="nav-brand">Emma</span>
       <ul class="nav-links">
-        <li><a href="#home">Home</a></li>
-        <li><a href="#projects">Projects</a></li>
         <li><a href="#about">About</a></li>
+        <li><a href="#projects">Projects</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
     </div>
   </nav>
-  <section class="hero" id="home">
+
+  <section class="hero" id="about">
     <div class="container">
-      <h1> </h1>
-      <p class="tagline">My Portfolio</p>
+      <h1>Emma</h1>
+      <p class="tagline">Data Scientist &amp; NLP Engineer in Healthcare</p>
+      <p class="bio">Ca va! ¿va bien? やあ！नमस्ते! হাই সেখানে! 안녕하세요! 哈囉!<br>
+      I work at the intersection of NLP and healthcare data, building tools to understand patient experience, disease burden, and clinical language. I'm also a linguaphile.</p>
     </div>
   </section>
-  <section class="about" id="about">
-    <div class="container">
-      <h2>Hi there! </h2>
-      <p>Ca va! ¿va bien? やあ！नमस्ते! হাই সেখানে! 안녕하세요! 哈囉! </p>
-      <p>My name is Emma, I am a Data Scientist/NLP Engineer in the field of healthcare, I also love languages and I am a linguaphile. </p>
-      <p>This is my portfolio in development. I will post some of my work here.</p> </div>
-  </section>
-  <section class="projects" id="projects">
-    <div class="container">
-      <h2>Projects</h2>
-      <div class="project-gallery">
-        <div class="project-card">
-          <h3>PWS Disease Concept Model</h3>
-          <p>Short description of the visualization/project.</p>
-          <a href="DCM/PWSV2/index.html">View Project</a>
+
+  <main class="container" id="projects">
+
+    <section class="project-group">
+      <h2>Patient Experience Data Dashboard</h2>
+      <p class="group-desc">Interactive dashboard prototype for exploring treatment experience, disease burden, and patient-generated data.</p>
+      <div class="project-grid">
+        <div class="project-card featured">
+          <div class="card-label">React App</div>
+          <h3>PED Dashboard</h3>
+          <p>Three-panel interactive dashboard: Treatment Experience, Disease Burden wheel, and FAQ/Question analysis.</p>
+          <a href="PEDmockup/dist/" class="btn">Open Dashboard &rarr;</a>
         </div>
-        <div class="project-card">
-          <h3>PED Dashboard Mockup</h3>
-          <p>Patient Experience Data dashboard prototype.</p>
-          <a href="PEDmockup/dist/">View Project</a>
-        </div>
-        <div class="project-card">
-          <h3>Visualization 3</h3>
-          <p>Short description of the visualization/project.</p>
-          <a href="#">View Project</a>
-        </div>
-        <!-- Add more project cards as needed -->
       </div>
-    </div>
-  </section>
+    </section>
+
+    <section class="project-group">
+      <h2>Disease Concept Models</h2>
+      <p class="group-desc">Network-based visualizations of disease concepts extracted from patient-reported data.</p>
+      <div class="project-grid">
+        <div class="project-card">
+          <div class="card-label">DCM</div>
+          <h3>PWS Concept Model V2</h3>
+          <p>Prader-Willi Syndrome disease concept model, version 2.</p>
+          <a href="DCM/PWSV2/index.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">DCM</div>
+          <h3>PWS Concept Model (3+)</h3>
+          <p>Prader-Willi Syndrome disease concept model for ages 3 and older.</p>
+          <a href="DCM/PWS3/index.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">DCM</div>
+          <h3>PWS Concept Model V1</h3>
+          <p>Original Prader-Willi Syndrome disease concept model.</p>
+          <a href="DCM/PWS/pws_dcm.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">DCM</div>
+          <h3>Lupus Concept Model</h3>
+          <p>Disease concept model for Systemic Lupus Erythematosus.</p>
+          <a href="DCM/lupus/index.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">DCM</div>
+          <h3>Scleroderma Concept Model</h3>
+          <p>Disease concept model for Scleroderma / Systemic Sclerosis.</p>
+          <a href="DCM/scleroderma/index.html" class="btn-link">View &rarr;</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="project-group">
+      <h2>Semantic Networks</h2>
+      <p class="group-desc">Co-occurrence and semantic relationship networks extracted from patient forums and clinical text.</p>
+      <div class="project-grid">
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Lupus Entity Network</h3>
+          <a href="lupus_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Lupus Sleep Network</h3>
+          <a href="lupus_sleep_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Lupus &amp; Sjögren's Sleep Network</h3>
+          <a href="Lupus&Sjogrens_sleep_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Men &amp; Lupus Network</h3>
+          <a href="menlupus_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Sjögren's Sleep Network</h3>
+          <a href="sjogrens_sleep_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>PWS Network (3+)</h3>
+          <a href="PWS_3andOlder_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>PWS Network (Birth–3)</h3>
+          <a href="PWS_birthto3_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>MG Entity Network</h3>
+          <a href="MG_entitynetwork.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>MG Mental Health Network</h3>
+          <a href="MG_mentalnetwork.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>COVID-19 2nd Dose Network</h3>
+          <a href="SO_2nd_dose_network.html" class="btn-link">View &rarr;</a>
+        </div>
+        <div class="project-card">
+          <div class="card-label">Network</div>
+          <h3>Semantic Network</h3>
+          <a href="semantic_network.html" class="btn-link">View &rarr;</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="project-group">
+      <h2>Tools</h2>
+      <div class="project-grid">
+        <div class="project-card">
+          <div class="card-label">Tool</div>
+          <h3>Text Span Annotator</h3>
+          <p>Annotation interface for labeling text spans in clinical or patient-generated text.</p>
+          <a href="annotate.html" class="btn-link">Open &rarr;</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
   <section class="contact" id="contact">
     <div class="container">
       <h2>Contact</h2>
-      <p>You can reach me at:</p>
       <ul class="contact-links">
-        <li><a href="zhnming AT gmail">Email</a></li>
-        <li><a href="#">GitHub</a></li>
-        <li><a href="#">LinkedIn</a></li>
+        <li><a href="mailto:zhnming@gmail.com">Email</a></li>
+        <li><a href="https://github.com/superemma" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="#" target="_blank" rel="noopener">LinkedIn</a></li>
       </ul>
     </div>
   </section>
+
   <footer>
     <div class="container">
-      <p>&copy; 2025 . All rights reserved.</p>
+      <p>&copy; 2025 Emma. All rights reserved.</p>
     </div>
   </footer>
 </body>
