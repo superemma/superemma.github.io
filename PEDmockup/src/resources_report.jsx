@@ -15,6 +15,11 @@ const T = {
   serif: "'Newsreader', 'Georgia', serif",
 };
 
+const SOURCES = ["r/narcolepsy", "narcolepsyforum.org"];
+const TOTAL_DOCS = 12847;
+const DATE_RANGE = "Jan 2022 - Dec 2024";
+const COMMUNITY = "Narcolepsy";
+
 const CATEGORIES = ["research", "news", "support", "pharma", "government", "other"];
 
 const CAT_STYLE = {
@@ -173,28 +178,36 @@ export default function ResourcesReport() {
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.sans, color: T.text }}>
       {/* HEADER */}
-      <div style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "28px 32px 24px" }}>
-        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 600, color: T.textDim, letterSpacing: 1, textTransform: "uppercase" }}>
-          Informational Resources Report
-        </p>
+      <div style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "24px 32px 20px" }}>
+        {/* Row 1: sources + doc count */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          {SOURCES.map(s => (
+            <span key={s} style={{
+              padding: "3px 10px", borderRadius: 5, fontSize: 11, fontWeight: 500,
+              background: T.blueLight, color: T.blueText,
+            }}>{s}</span>
+          ))}
+          <span style={{ marginLeft: "auto", fontSize: 12, color: T.textDim, alignSelf: "center" }}>
+            {fmt(TOTAL_DOCS)} documents &middot; {DATE_RANGE}
+          </span>
+        </div>
+        {/* Row 2: title */}
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, fontFamily: T.serif, lineHeight: 1.3 }}>
-          What informational resources are being shared in the community?
+          What informational resources are being shared in the <span style={{ color: "#1D6B4F", fontWeight: 700 }}>{COMMUNITY.toLowerCase()}</span> community?
         </h1>
-        <p style={{ margin: "6px 0 0", fontSize: 13, color: T.textDim }}>
-          URLs and domains extracted from community posts. Categorized by type, with patient vs caregiver attribution.
-        </p>
-
-        {/* Filtering note */}
-        <div style={{
-          marginTop: 16, padding: "12px 16px", background: T.surfaceAlt,
-          borderRadius: 8, fontSize: 12, color: T.textMid, lineHeight: 1.6,
-        }}>
-          <span style={{ fontWeight: 600 }}>Filtering applied:</span>{" "}
-          {fmt(totalExcluded)} URLs excluded from analysis.{" "}
-          Reddit self-links: {fmt(EXCLUDED_STATS.redditSelf)}.{" "}
-          URL shorteners (bit.ly, t.co, etc.): {fmt(EXCLUDED_STATS.shorteners)}.{" "}
-          Unrecognized domains: {fmt(EXCLUDED_STATS.unrecognized)}.{" "}
-          {riskyCount} URLs flagged as risky and displayed as unclickable below.
+        {/* Row 3: category filter */}
+        <div style={{ display: "flex", gap: 20, marginTop: 18, flexWrap: "wrap", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: T.textDim, letterSpacing: ".5px", textTransform: "uppercase" }}>Category</span>
+            <select value={domainCatFilter} onChange={e => setDomainCatFilter(e.target.value)} style={{
+              padding: "5px 10px", borderRadius: 6, border: `1px solid ${T.border}`,
+              fontSize: 12, fontFamily: T.sans, color: T.text, background: T.surfaceAlt,
+              cursor: "pointer", outline: "none",
+            }}>
+              <option value="all">All categories</option>
+              {CATEGORIES.map(c => <option key={c} value={c}>{CAT_STYLE[c]?.label || c}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
