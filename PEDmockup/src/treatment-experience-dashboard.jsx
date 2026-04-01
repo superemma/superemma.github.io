@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-const SOURCES = ["r/narcolepsy", "narcolepsyforum.org"];
+const SOURCES = ["r/narcolepsy", "PWN4PWN"];
 const TOTAL_DOCS = 12847;
 const DATE_RANGE = "Jan 2022 - Dec 2024";
 const H = {
-  bg: "#FAFAF8", surface: "#FFFFFF", border: "#E8E6DF",
+  bg: "#FAFAF8", surface: "#FFFFFF", border: "#E8E6DF",accent: "#1D6B4F",
   text: "#1A1A18", textDim: "#9C9A92",
   blueLight: "#EBF3FA", blueText: "#1E4F78",
   serif: "'Newsreader', 'Georgia', serif",
@@ -44,7 +44,7 @@ function genSentiment(posBase, negBase, rng, n) {
 }
 
 const drugs = {
-  "Drug A (yours)": {
+  "Drug A": {
     sentiment: genSentiment(48, 22, seed(42), 27),
     total: 2847,
     switchTo: 234,
@@ -328,32 +328,37 @@ export default function TreatmentDashboard() {
         </div>
         {/* Row 2: title */}
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, fontFamily: H.serif, lineHeight: 1.3 }}>
-          How do patients feel about their treatment?
+          How do patients feel about <span style={{ color: "#1D9E75", fontWeight: 700 }}>Drug A</span>?
         </h1>
-        {/* Row 3: drug filter */}
-        <div style={{ display: "flex", gap: 20, marginTop: 18, flexWrap: "wrap", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: H.textDim, letterSpacing: ".5px", textTransform: "uppercase" }}>Drug</span>
-            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-              {drugNames.map(name => (
-                <button key={name} onClick={() => setActiveDrug(name)} style={{
-                  fontSize: 11, padding: "5px 14px", borderRadius: 6, cursor: "pointer",
-                  fontFamily: H.sans, fontWeight: activeDrug === name ? 600 : 400,
-                  background: activeDrug === name ? drugs[name].color : "transparent",
-                  color: activeDrug === name ? "#fff" : H.textDim,
-                  border: `1px solid ${activeDrug === name ? drugs[name].color : H.border}`,
-                  transition: "all .15s",
-                }}>
-                  {name}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
 
       <div style={{ padding: "20px 32px 48px", maxWidth: 720, margin: "0 auto" }}>
-
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8, marginBottom: 20 }}>
+        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
+          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Total mentions</div>
+          <div style={{ fontSize: 18, fontWeight: 500, color: delta >= 0 ? GREEN[400] : RED[400] }}>2,564</div>
+          <div style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}></div>
+        </div>
+        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
+          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Unique Authors</div>
+          <div style={{ fontSize: 18, fontWeight: 500, color: delta >= 0 ? GREEN[400] : RED[400] }}>822</div>
+          <div style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>confirmed taken</div>
+        </div>
+        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
+          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Switching to {activeDrug.split(" (")[0]}</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span style={{ fontSize: 18, fontWeight: 500, color: TEAL[400] }}>{d.switchTo}</span>
+            <span style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>mentions</span>
+          </div>
+        </div>
+        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
+          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Switching away</div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+            <span style={{ fontSize: 18, fontWeight: 500, color: CORAL[400] }}>{d.switchAway}</span>
+            <span style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>mentions</span>
+          </div>
+        </div>
+      </div>
       <div style={{ display: "grid", gridTemplateColumns: "120px minmax(0,1fr)", gap: 16, marginBottom: 20, background: "var(--color-background-primary)", border: "0.5px solid var(--color-border-tertiary)", borderRadius: "var(--border-radius-lg)", padding: "16px 20px" }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           <SentDonut sentData={d.sentiment} size={100} />
@@ -376,27 +381,7 @@ export default function TreatmentDashboard() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 20 }}>
-        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
-          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Positive sentiment trend</div>
-          <div style={{ fontSize: 18, fontWeight: 500, color: delta >= 0 ? GREEN[400] : RED[400] }}>{delta >= 0 ? "+" : ""}{delta}pp</div>
-          <div style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>vs. prior 3 months</div>
-        </div>
-        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
-          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Switching to {activeDrug.split(" (")[0]}</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span style={{ fontSize: 18, fontWeight: 500, color: TEAL[400] }}>{d.switchTo}</span>
-            <span style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>mentions</span>
-          </div>
-        </div>
-        <div style={{ background: "var(--color-background-secondary)", borderRadius: "var(--border-radius-md)", padding: "10px 14px" }}>
-          <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 3 }}>Switching away</div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-            <span style={{ fontSize: 18, fontWeight: 500, color: CORAL[400] }}>{d.switchAway}</span>
-            <span style={{ fontSize: 10, color: "var(--color-text-tertiary)" }}>mentions</span>
-          </div>
-        </div>
-      </div>
+
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <div style={{ fontSize: 14, fontWeight: 500 }}>Sentiment over time</div>

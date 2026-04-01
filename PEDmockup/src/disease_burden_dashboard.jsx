@@ -31,7 +31,7 @@ const T = {
   mono: "'JetBrains Mono', 'Fira Code', monospace",
 };
 
-const SOURCES = ["r/narcolepsy", "narcolepsyforum.org", "talkaboutsleep.com"];
+const SOURCES = ["r/narcolepsy", "PWN4PWN"];
 const DATE_RANGE = "Jan 2021 - Dec 2024";
 const TOTAL_DOCS = 12847;
 const CONDITION = "Excessive daytime sleepiness";
@@ -256,6 +256,7 @@ function AssertionBar() {
 export default function DiseaseBurdenDashboard() {
   const [subgroup, setSubgroup] = useState("all");
   const [unit, setUnit] = useState("value");
+  const [showPct, setShowPct] = useState(false);
   const [spanFilter, setSpanFilter] = useState("");
   const [spanType, setSpanType] = useState("all");
   const [selectedEmotion, setSelectedEmotion] = useState(null);
@@ -273,6 +274,11 @@ export default function DiseaseBurdenDashboard() {
   const deviationData = useMemo(() =>
     ADL_DATA.map(d => ({ ...d, value: Math.round(d.value * mult), baseline: d.baseline })), [mult]
   );
+
+  const adlTotal = adlFiltered.reduce((s, d) => s + d.display, 0);
+  const adlDisplay = showPct
+    ? adlFiltered.map(d => ({ ...d, display: adlTotal ? +((d.display / adlTotal) * 100).toFixed(1) : 0 }))
+    : adlFiltered;
 
   const totalMentions = Math.round(4312 * mult);
   const totalDocs = Math.round(1847 * mult);
@@ -317,44 +323,53 @@ export default function DiseaseBurdenDashboard() {
               ))}
             </div>
           </div>
-          <div style={{ width: 1, height: 24, background: T.border }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: T.textDim, letterSpacing: ".5px", textTransform: "uppercase" }}>Unit</span>
-            <div style={{ display: "flex", gap: 4 }}>
-              {[{ id: "value", label: "Paragraphs" }, { id: "docs", label: "Documents" }, { id: "authors", label: "Authors" }].map(u => (
-                <Chip key={u.id} label={u.label} active={unit === u.id} onClick={() => setUnit(u.id)} activeColor={T.blue} activeBg={T.blueLight} />
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
       <div style={{ padding: "20px 32px 48px", maxWidth: 920, margin: "0 auto" }}>
         {/* SUMMARY CARDS */}
         <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap" }}>
-          <Stat label="EDS mentions" value={fmt(totalMentions)} sub={subgroup !== "all" ? `filtered: ${subgroup}` : null} />
-          <Stat label="Rank" value="#1 of 23" />
+          <Stat label="Mentions" value={fmt(totalMentions)} sub={subgroup !== "all" ? `filtered: ${subgroup}` : null} />
           <Stat label="Share of volume" value="33.6%" />
-          <Stat label="Documents" value={fmt(totalDocs)} />
+          <Stat label="Unique authors" value="623" />
+          <Stat label="Post and Comments" value={fmt(totalDocs)} />
           <Stat label="Assertion split"><AssertionBar /></Stat>
         </div>
 
         {/* ADL BAR CHART */}
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 600 }}>Activities of daily living affected by EDS</h2>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Activities of daily living affected by EDS</h2>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: T.textDim, letterSpacing: ".5px", textTransform: "uppercase" }}>Unit</span>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {[{ id: "value", label: "Paragraphs" }, { id: "docs", label: "Documents" }, { id: "authors", label: "Authors" }].map(u => (
+                    <Chip key={u.id} label={u.label} active={unit === u.id} onClick={() => setUnit(u.id)} activeColor={T.blue} activeBg={T.blueLight} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ width: 1, height: 20, background: T.border }} />
+              <div style={{ display: "flex", gap: 4 }}>
+                <Chip label="Count" active={!showPct} onClick={() => setShowPct(false)} activeColor={T.blue} activeBg={T.blueLight} />
+                <Chip label="%" active={showPct} onClick={() => setShowPct(true)} activeColor={T.blue} activeBg={T.blueLight} />
+              </div>
+            </div>
+          </div>
           <p style={{ margin: "0 0 16px", fontSize: 12, color: T.textDim }}>
             ADL categories most discussed in paragraphs mentioning excessive daytime sleepiness, measured in {unitLabel.toLowerCase()}
           </p>
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "20px 16px 12px" }}>
             <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={adlFiltered} layout="vertical" margin={{ left: 10, right: 40, top: 0, bottom: 0 }}>
+              <BarChart data={adlDisplay} layout="vertical" margin={{ left: 10, right: 40, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: T.textDim, fontFamily: T.sans }} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: T.textDim, fontFamily: T.sans }}
+                  tickFormatter={showPct ? v => `${v}%` : undefined} />
                 <YAxis dataKey="category" type="category" width={155} tick={{ fontSize: 12, fill: T.textMid, fontFamily: T.sans }} />
-                <Tooltip content={<Tip />} />
-                <Bar dataKey="display" name={unitLabel} radius={[0, 4, 4, 0]} maxBarSize={18}>
-                  {adlFiltered.map((d, i) => (
-                    <Cell key={i} fill={T.accent} opacity={0.3 + (1 - i / adlFiltered.length) * 0.5} />
+                <Tooltip content={<Tip />} formatter={showPct ? v => [`${v}%`, unitLabel] : undefined} />
+                <Bar dataKey="display" name={showPct ? `% of ${unitLabel.toLowerCase()}` : unitLabel} radius={[0, 4, 4, 0]} maxBarSize={18}>
+                  {adlDisplay.map((d, i) => (
+                    <Cell key={i} fill={T.accent} opacity={0.3 + (1 - i / adlDisplay.length) * 0.5} />
                   ))}
                 </Bar>
               </BarChart>
@@ -425,14 +440,20 @@ export default function DiseaseBurdenDashboard() {
           <Collapsible title="Emotion profile">
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 20, marginTop: 14 }}>
               <div>
-                <p style={{ fontSize: 12, fontWeight: 600, color: T.textMid, margin: "0 0 10px" }}>Emotion frequency</p>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: T.textMid, margin: 0 }}>Emotion frequency</p>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <Chip label="Count" active={!showPct} onClick={() => setShowPct(false)} activeColor={T.blue} activeBg={T.blueLight} />
+                    <Chip label="%" active={showPct} onClick={() => setShowPct(true)} activeColor={T.blue} activeBg={T.blueLight} />
+                  </div>
+                </div>
                 <ResponsiveContainer width="100%" height={320}>
-                  <BarChart data={emotionFiltered} layout="vertical" margin={{ left: 0, right: 30, top: 0, bottom: 0 }}>
+                  <BarChart data={(() => { const tot = emotionFiltered.reduce((s, e) => s + e.display, 0); return showPct ? emotionFiltered.map(e => ({ ...e, display: tot ? +((e.display / tot) * 100).toFixed(1) : 0 })) : emotionFiltered; })()} layout="vertical" margin={{ left: 0, right: 30, top: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-                    <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} tickFormatter={showPct ? v => `${v}%` : undefined} />
                     <YAxis dataKey="emotion" type="category" width={90} tick={{ fontSize: 11, fill: T.textMid }} />
-                    <Tooltip content={<Tip />} />
-                    <Bar dataKey="display" name={unitLabel} radius={[0, 3, 3, 0]} maxBarSize={16}
+                    <Tooltip content={<Tip />} formatter={showPct ? v => [`${v}%`, unitLabel] : undefined} />
+                    <Bar dataKey="display" name={showPct ? `% of ${unitLabel.toLowerCase()}` : unitLabel} radius={[0, 3, 3, 0]} maxBarSize={16}
                       cursor="pointer" onClick={(d) => setSelectedEmotion(d.emotion === selectedEmotion ? null : d.emotion)}>
                       {emotionFiltered.map((d, i) => (
                         <Cell key={i} fill={d.group === "neg" ? T.warm : T.accent}

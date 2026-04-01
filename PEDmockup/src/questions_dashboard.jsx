@@ -22,7 +22,7 @@ const T = {
 
 const LINE_COLORS = [T.blue, T.warm, T.accent, T.purple, T.amber, T.teal, T.coral];
 
-const SOURCES = ["r/narcolepsy", "narcolepsyforum.org", "talkaboutsleep.com"];
+const SOURCES = ["r/narcolepsy", "PWN4PWN"];
 const COMMUNITY = "Narcolepsy";
 const TOTAL_DOCS = 12847;
 const DATE_RANGE = "Jan 2022 - Dec 2024";
@@ -279,9 +279,10 @@ function QuestionRow({ q, mult, expanded, onToggle }) {
   );
 }
 
-export default function QuestionsDashboard() {
+export default function () {
   const [condition, setCondition] = useState("all");
   const [subgroup, setSubgroup] = useState("all");
+  const [showPct, setShowPct] = useState(false);
   const [timeGranularity, setTimeGranularity] = useState("monthly");
   const [expandedRow, setExpandedRow] = useState(null);
   const [visibleLines, setVisibleLines] = useState(() => new Set([1, 2, 3, 4, 5]));
@@ -455,15 +456,21 @@ export default function QuestionsDashboard() {
 
         {/* PANEL 2: Frequency Bar Chart */}
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 600 }}>Question frequency</h2>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Question frequency</h2>
+            <div style={{ display: "flex", gap: 4 }}>
+              <Chip label="Count" active={!showPct} onClick={() => setShowPct(false)} activeColor={T.blue} activeBg={T.blueLight} />
+              <Chip label="%" active={showPct} onClick={() => setShowPct(true)} activeColor={T.blue} activeBg={T.blueLight} />
+            </div>
+          </div>
           <p style={{ margin: "0 0 14px", fontSize: 12, color: T.textDim }}>Top 10 question themes by volume</p>
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "20px 16px 12px" }}>
             <ResponsiveContainer width="100%" height={340}>
-              <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+              <BarChart data={(() => { const tot = barData.reduce((s, d) => s + d.value, 0); return showPct ? barData.map(d => ({ ...d, value: tot ? +((d.value / tot) * 100).toFixed(1) : 0 })) : barData; })()} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} />
+                <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} tickFormatter={showPct ? v => `${v}%` : undefined} />
                 <YAxis dataKey="theme" type="category" width={220} tick={{ fontSize: 11, fill: T.textMid, fontFamily: T.sans }} />
-                <Tooltip content={<Tip />} />
+                <Tooltip content={<Tip />} formatter={showPct ? v => [`${v}%`, "Questions"] : undefined} />
                 <Bar dataKey="value" name="Questions" radius={[0, 4, 4, 0]} maxBarSize={18}>
                   {barData.map((d, i) => (
                     <Cell key={i} fill={T.accent} opacity={0.3 + (1 - i / barData.length) * 0.5} />
@@ -476,17 +483,23 @@ export default function QuestionsDashboard() {
 
         {/* PANEL 3: Subgroup Comparison */}
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 600 }}>Questions by subgroup</h2>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 4 }}>
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Questions by subgroup</h2>
+            <div style={{ display: "flex", gap: 4 }}>
+              <Chip label="Count" active={!showPct} onClick={() => setShowPct(false)} activeColor={T.blue} activeBg={T.blueLight} />
+              <Chip label="%" active={showPct} onClick={() => setShowPct(true)} activeColor={T.blue} activeBg={T.blueLight} />
+            </div>
+          </div>
           <p style={{ margin: "0 0 14px", fontSize: 12, color: T.textDim }}>
-            Patient vs caregiver question profiles. Shows where each group's concerns diverge.
+            Patient vs caregiver question profiles. {showPct ? "% share within each theme." : "Shows where each group's concerns diverge."}
           </p>
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 10, padding: "20px 16px 12px" }}>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={subgroupData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+              <BarChart data={showPct ? subgroupData.map(d => { const t = d.patients + d.caregivers; return { ...d, patients: t ? +((d.patients / t) * 100).toFixed(1) : 0, caregivers: t ? +((d.caregivers / t) * 100).toFixed(1) : 0 }; }) : subgroupData} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} />
+                <XAxis type="number" tick={{ fontSize: 10, fill: T.textDim }} tickFormatter={showPct ? v => `${v}%` : undefined} />
                 <YAxis dataKey="theme" type="category" width={200} tick={{ fontSize: 11, fill: T.textMid }} />
-                <Tooltip content={<Tip />} />
+                <Tooltip content={<Tip />} formatter={showPct ? v => [`${v}%`] : undefined} />
                 <Legend iconType="square" iconSize={8} wrapperStyle={{ fontSize: 11, fontFamily: T.sans }} />
                 <Bar dataKey="patients" name="Patients" radius={[0, 3, 3, 0]} maxBarSize={12} fill={T.blue} opacity={0.6} />
                 <Bar dataKey="caregivers" name="Caregivers" radius={[0, 3, 3, 0]} maxBarSize={12} fill={T.purple} opacity={0.6} />
