@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import ExploreDashboard from './exploratory-dashboard';
 import TreatmentDashboard from './treatment-experience-dashboard';
 import DiseaseBurdenDashboard from './disease_burden_dashboard';
@@ -47,6 +47,7 @@ export default function App() {
     <BrowserRouter basename="/PEDmockup/dist">
       <Nav />
       <Routes>
+        <Route path="/" element={<Navigate to="/explore" replace />} />
         <Route path="/explore" element={<ExploreDashboard />} />
         <Route path="/treatment" element={<TreatmentDashboard />} />
         <Route path="/disease-burden" element={<DiseaseBurdenDashboard />} />
