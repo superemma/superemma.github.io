@@ -4,6 +4,17 @@ import TreatmentDashboard from './treatment-experience-dashboard';
 import DiseaseBurdenDashboard from './disease_burden_dashboard';
 import QuestionsDashboard from './questions_dashboard';
 import ResourcesReport from './resources_report';
+function DisclaimerBanner() {
+  return (
+    <div style={{
+      background: '#fef9c3', color: '#713f12', fontSize: '0.8rem',
+      padding: '0.4rem 1.5rem', textAlign: 'center', borderBottom: '1px solid #fde68a',
+    }}>
+      Prototype only — all data shown are synthetic and do not represent real patients or clinical findings.
+    </div>
+  );
+}
+
 function Nav() {
   return (
     <nav style={{ display: 'flex', gap: '1rem', padding: '0.75rem 1.5rem', background: '#1e293b', borderBottom: '1px solid #334155' }}>
@@ -45,6 +56,7 @@ function Nav() {
 export default function App() {
   return (
     <BrowserRouter basename="/PEDmockup/dist">
+      <DisclaimerBanner />
       <Nav />
       <Routes>
         <Route path="/" element={<Navigate to="/explore" replace />} />
